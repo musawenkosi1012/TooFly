@@ -6,8 +6,8 @@ import uuid
 router = APIRouter()
 
 # For a production app, you'd use S3 or a similar persistent media store.
-# For this demo, we'll save locally in /app/public/uploads OR just return a mock URL.
-UPLOAD_DIR = pathlib.Path("/app/static/uploads")
+# Choreo uses a read-only FS, so we'll save in /tmp/static/uploads (backed by emptyDir)
+UPLOAD_DIR = pathlib.Path("/tmp/static/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 @router.post("/upload")

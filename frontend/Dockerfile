@@ -18,14 +18,14 @@ RUN apk update && apk upgrade --no-cache
 # Create non-root user for security (Checkov CKV_DOCKER_3)
 RUN adduser -D -u 10014 choreouser
 
-# Fix permissions for Nginx to run as non-root
-RUN touch /var/run/nginx.pid && \
-    chown -R choreouser:choreouser /var/run/nginx.pid /var/cache/nginx /var/log/nginx /usr/share/nginx/html
+# Copy standalone standalone nginx config to main location
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy build output from builder stage
 COPY --from=builder /app/out /usr/share/nginx/html
+
+# Grant ownership to choreouser for build-time file access
+RUN chown -R 10014:10014 /usr/share/nginx/html /var/cache/nginx /var/log/nginx
 
 USER 10014
 EXPOSE 3000

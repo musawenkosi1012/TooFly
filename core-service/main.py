@@ -36,9 +36,9 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Static Files (for images)
-static_dir = "/app/static"
-uploads_dir = "/app/static/uploads"
+# Static Files (for images) - Use /tmp for writable storage on Read-only FS
+static_dir = "/tmp/static"
+uploads_dir = "/tmp/static/uploads"
 os.makedirs(uploads_dir, exist_ok=True)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
