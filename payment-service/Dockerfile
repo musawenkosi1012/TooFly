@@ -7,8 +7,8 @@ RUN for i in 1 2 3; do apt-get update && apt-get upgrade -y && apt-get install -
     build-essential \
     && rm -rf /var/lib/apt/lists/* && break || sleep 5; done
 
-# Create a non-root user for security
-RUN useradd -m -u 1000 python
+# Create a non-root user for security (Choreo UID requirement: 10000-20000)
+RUN useradd -m -u 10014 python
 
 # Copy requirements and install
 COPY requirements.txt .
@@ -17,9 +17,9 @@ RUN for i in 1 2 3; do pip install --default-timeout=100 --no-cache-dir -r requi
 # Copy application code
 COPY . .
 
-# Set permissions and switch to user
-RUN chown -R 1000:1000 /app
-USER 1000
+# Set permissions for the non-root user
+RUN chown -R 10014:10014 /app
+USER 10014
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1
