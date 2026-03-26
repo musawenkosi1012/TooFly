@@ -1,0 +1,6 @@
+version: 0.1
+endpoints:
+  - name: Core API
+    port: 8000
+    type: REST
+    context: /

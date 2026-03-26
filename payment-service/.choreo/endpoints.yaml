@@ -1,0 +1,6 @@
+version: 0.1
+endpoints:
+  - name: Payment API
+    port: 9000
+    type: REST
+    context: /
