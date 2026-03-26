@@ -28,7 +28,6 @@ async def upload_file(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Could not save file: {e}")
     
-    # Return the URL.
-    # We use a hardcoded domain OR relative URL depending on configuration.
-    # For now, let's assume /static/uploads/... is served by the backend.
-    return {"image_url": f"http://localhost:8000/static/uploads/{filename}"}
+    # Return the relative URL. 
+    # The frontend will prepend the API base URL if needed, or the browser will resolve if the app is on the same host.
+    return {"image_url": f"/static/uploads/{filename}"}

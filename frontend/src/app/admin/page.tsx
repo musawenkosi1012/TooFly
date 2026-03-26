@@ -25,15 +25,16 @@ export default function AdminPage() {
     })
     
     const router = useRouter()
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
+    const cleanBaseUrl = baseUrl.endsWith("/api") ? baseUrl.replace("/api", "") : baseUrl
 
     async function loadDashboard() {
         try {
             const token = sessionStorage.getItem("token")
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001"
             
             const [productData, dashRes] = await Promise.all([
                 fetchProducts(),
-                fetch(`${baseUrl}/api/owner/dashboard`, {
+                fetch(`${cleanBaseUrl}/api/owner/dashboard`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 })
             ])
@@ -57,8 +58,7 @@ export default function AdminPage() {
     const handleDelete = async (id: number) => {
         if (!confirm("Are you sure you want to remove this piece from the stream?")) return
         try {
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001"
-            await fetch(`${baseUrl}/api/products/${id}`, {
+            await fetch(`${cleanBaseUrl}/api/products/${id}`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
             })
@@ -83,7 +83,7 @@ export default function AdminPage() {
         formData.append("file", file)
         
         try {
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/api"
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
             const uploadUrl = baseUrl.endsWith("/api") ? baseUrl.replace("/api", "") + "/api/upload" : `${baseUrl}/api/upload`
             
             const res = await fetch(uploadUrl, {
@@ -94,8 +94,7 @@ export default function AdminPage() {
             if (!res.ok) throw new Error("Upload failed")
             
             const data = await res.json()
-            const serverUrl = baseUrl.endsWith("/api") ? baseUrl.replace("/api", "") : baseUrl
-            setNewProduct({...newProduct, image_url: `${serverUrl}${data.url}`})
+            setNewProduct({...newProduct, image_url: `${cleanBaseUrl}${data.image_url}`})
         } catch (error) {
             console.error("Image upload failed", error)
             alert("Failed to upload image.")
@@ -112,7 +111,7 @@ export default function AdminPage() {
         setIsUploadingToProduct(productId)
         
         try {
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/api"
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
             const uploadUrl = baseUrl.endsWith("/api") ? baseUrl.replace("/api", "") + "/api/upload" : `${baseUrl}/api/upload`
             
             const uploadedUrls: string[] = []
@@ -125,14 +124,13 @@ export default function AdminPage() {
                 const res = await fetch(uploadUrl, { method: "POST", body: formData })
                 if (res.ok) {
                     const data = await res.json()
-                    const serverUrl = baseUrl.endsWith("/api") ? baseUrl.replace("/api", "") : baseUrl
-                    uploadedUrls.push(`${serverUrl}${data.url}`)
+                    uploadedUrls.push(`${cleanBaseUrl}${data.image_url}`)
                 }
             }
             
             // Append images to product
             if (uploadedUrls.length > 0) {
-                const attachUrl = baseUrl.endsWith("/api") ? baseUrl.replace("/api", "") + `/api/products/${productId}/images` : `${baseUrl}/api/products/${productId}/images`
+                const attachUrl = `${cleanBaseUrl}/api/products/${productId}/images`
                 const attachRes = await fetch(attachUrl, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
