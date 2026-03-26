@@ -1,6 +1,7 @@
-version: 0.1
+version: "0.1"
 endpoints:
-  - name: Payment API
+  - name: Payment REST API
     port: 9000
     type: REST
     context: /
+    networkVisibility: Public
