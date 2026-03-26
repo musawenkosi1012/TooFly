@@ -1,0 +1,114 @@
+"use client"
+
+import { motion } from "framer-motion"
+import Link from "next/link"
+import { ArrowRight, Zap, Shield, Globe, UserPlus, LogIn } from "lucide-react"
+import { useState, useEffect } from "react"
+
+export default function Home() {
+  const [user, setUser] = useState<{ email: string } | null>(null)
+
+  useEffect(() => {
+    const storedUser = sessionStorage.getItem("user")
+    if (storedUser) {
+      setUser(JSON.parse(storedUser))
+    }
+  }, [])
+
+  return (
+    <main className="min-h-screen overflow-hidden bg-white dark:bg-black">
+      {/* Hero Section */}
+      <section className="relative pt-32 md:pt-48 pb-20 px-6">
+        {/* Animated Background Blobs */}
+        <div className="absolute top-[-5%] left-[-5%] w-64 md:w-96 h-64 md:h-96 bg-accent/10 rounded-full blur-[80px] md:blur-[120px] -z-10" />
+        
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <span className="text-accent font-bold uppercase tracking-[0.5em] text-[10px] mb-8 block">
+              Volume 01 / SS26 Drop
+            </span>
+            <h1 className="text-5xl sm:text-7xl lg:text-[8rem] xl:text-[10rem] font-bold uppercase italic tracking-tighter leading-[0.8] mb-10 text-gradient">
+              ATMOSPHERE <br /> PERMANENCE
+            </h1>
+            <p className="text-[11px] md:text-[13px] font-bold uppercase tracking-[0.1em] text-gray-400 max-w-sm mb-12 leading-relaxed opacity-70">
+              Experience the evolution of streetwear. Fluid silhouettes meets digital permanence in our latest curated collection.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link
+                href="/register"
+                className="px-10 py-5 bg-black dark:bg-white text-white dark:text-black font-bold uppercase tracking-[0.2em] text-[10px] rounded-2xl hover:scale-105 transition-transform flex items-center justify-center gap-3 shadow-2xl shadow-indigo-500/10"
+              >
+                Sign Up <UserPlus size={14} />
+              </Link>
+              <Link
+                href="/login"
+                className="px-10 py-5 border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 font-bold uppercase tracking-[0.2em] text-[10px] rounded-2xl hover:bg-black/10 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-3"
+              >
+                Sign In <LogIn size={14} />
+              </Link>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+            className="relative hidden sm:block"
+          >
+            <div className="aspect-[4/5] rounded-[3rem] md:rounded-[4rem] overflow-hidden relative group shadow-3xl shadow-black/20">
+              <img
+                src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=800"
+                alt="Featured Drop"
+                className="w-full h-full object-cover grayscale brightness-95 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000"
+              />
+              <div className="absolute inset-x-6 bottom-6 p-6 md:p-8 glass rounded-[2rem] md:rounded-[2.5rem] backdrop-blur-2xl">
+                <div className="flex justify-between items-end">
+                  <div>
+                    <h3 className="text-2xl md:text-3xl font-bold uppercase italic tracking-tighter mb-1">Void Shell V1</h3>
+                    <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-accent">Limited Drop / 50 Pcs</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xl md:text-2xl font-bold tracking-tighter">$499.00</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Features Grid */}
+      <section className="py-40 px-6 border-t border-black/5 dark:border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center lg:text-left">
+            {[
+              { icon: Zap, title: "Real-time Drops", desc: "Instant access to limited collections directly from our digital atelier." },
+              { icon: Shield, title: "Protected Data", desc: "Every piece is verified and tracked on our private curator network." },
+              { icon: Globe, title: "Global Collective", desc: "Shipping across 20+ countries with sustainable carbon-neutral logistics." }
+            ].map((feature, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                viewport={{ once: true }}
+                className="group"
+              >
+                <div className="w-16 h-16 bg-black/5 dark:bg-white/5 rounded-[2rem] flex items-center justify-center text-black dark:text-white mb-8 group-hover:bg-accent group-hover:text-white transition-all duration-500 mx-auto lg:mx-0">
+                  <feature.icon size={24} />
+                </div>
+                <h4 className="text-xl font-bold uppercase italic tracking-tighter mb-4">{feature.title}</h4>
+                <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-gray-500 leading-relaxed opacity-60">{feature.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </main>
+  )
+}
