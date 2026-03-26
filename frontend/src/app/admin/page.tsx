@@ -25,7 +25,7 @@ export default function AdminPage() {
     })
     
     const router = useRouter()
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://1d2518ee-f9d3-4e39-961c-7770f8941863-dev.e1-eu-north-azure.choreoapis.dev/default/core-service/v1.0/api"
     const cleanBaseUrl = baseUrl.endsWith("/api") ? baseUrl.replace("/api", "") : baseUrl
 
     async function loadDashboard() {
