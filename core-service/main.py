@@ -25,6 +25,7 @@ app = FastAPI(
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://57dd5a30-006e-4019-9466-63f44aa32fc4.e1-eu-north-azure.choreoapps.dev",
 ]
 
 app.add_middleware(
