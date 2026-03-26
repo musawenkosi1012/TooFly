@@ -13,6 +13,8 @@ RUN npm run build
 
 # Production stage
 FROM nginx:alpine
+# Fix security vulnerabilities
+RUN apk update && apk upgrade --no-cache
 # Create non-root user for security (Checkov CKV_DOCKER_3)
 RUN adduser -D -u 10014 choreouser
 

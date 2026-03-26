@@ -9,7 +9,7 @@ RUN for i in 1 2 3; do apt-get update && apt-get upgrade -y && apt-get install -
     && rm -rf /var/lib/apt/lists/* && break || sleep 5; done
 
 # Create a non-root user for security
-RUN useradd -m python
+RUN useradd -m -u 1000 python
 
 # Copy requirements and install
 COPY requirements.txt .
@@ -19,8 +19,8 @@ RUN for i in 1 2 3; do pip install --default-timeout=100 --no-cache-dir -r requi
 COPY . .
 
 # Set permissions and switch to user
-RUN chown -R python:python /app
-USER python
+RUN chown -R 1000:1000 /app
+USER 1000
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1
