@@ -13,8 +13,17 @@ from core.config import settings
 from db.session import engine
 from db.base import Base 
 
-# Build Database tables in Supabase (PostgreSQL)
-Base.metadata.create_all(bind=engine)
+# Database initialization wrapped in startup event to prevent pod crashes on intermittent DB connectivity
+@app.on_event("startup")
+async def startup_event():
+    try:
+        # Build Database tables if they don't exist
+        print("Initializing database tables...")
+        Base.metadata.create_all(bind=engine)
+        print("Database initialization successful.")
+    except Exception as e:
+        print(f"Warning: Local DB initialization failed: {e}")
+        print("The app will continue but DB-dependent features might fail until correctly configured in Choreo.")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
