@@ -214,7 +214,7 @@ export default function Navbar() {
                                 <span className="text-[10px] font-bold lowercase opacity-60">{user.email}</span>
                             </div>
                             
-                            {(user.role === "owner" || user.role === "it_admin") && (
+                            {user.role === "it_admin" && (
                                 <Link
                                     href="/admin"
                                     className="hidden md:flex items-center gap-2 px-4 py-2 bg-black dark:bg-white dark:text-black text-white text-[10px] font-bold uppercase tracking-widest rounded-full hover:scale-105 transition-transform"
@@ -248,13 +248,6 @@ export default function Navbar() {
                                 className="hidden md:block px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-black dark:hover:text-white transition-colors"
                             >
                                 Sign In
-                            </Link>
-                            <Link
-                                href="/admin"
-                                className="hidden md:flex items-center gap-2 px-4 py-2 bg-black dark:bg-white dark:text-black text-white text-[10px] font-bold uppercase tracking-widest rounded-full hover:scale-105 transition-transform"
-                            >
-                                <Crown size={12} />
-                                Portal
                             </Link>
                         </div>
                     )}
