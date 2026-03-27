@@ -31,44 +31,43 @@ async def startup_event():
         print(f"Warning: Local DB initialization failed: {e}")
         print("The app will continue but DB-dependent features might fail until correctly configured in Choreo.")
 
-# Enhanced CORS configuration
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 
 class DynamicCORSMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
+    async def dispatch(self, request: Request, call_next):
         origin = request.headers.get("origin")
         
-        # Preflight handling
-        if request.method == "OPTIONS":
-            response = JSONResponse(content="OK")
-            if origin:
-                response.headers["Access-Control-Allow-Origin"] = origin
-                response.headers["Access-Control-Allow-Credentials"] = "true"
-                response.headers["Access-Control-Allow-Methods"] = "*"
-                response.headers["Access-Control-Allow-Headers"] = "*"
+        # Determine if origin is allowed
+        is_allowed = False
+        if not origin:
+            is_allowed = True
+        elif ".vercel.app" in origin or "localhost" in origin or "127.0.0.1" in origin:
+            is_allowed = True
+            
+        # Handle Preflight OPTIONS
+        if request.method == "OPTIONS" and is_allowed:
+            response = Response()
+            response.headers["Access-Control-Allow-Origin"] = origin or "*"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
+            response.headers["Access-Control-Max-Age"] = "600"
             return response
-        
+
         try:
             response = await call_next(request)
         except Exception as e:
-            # Ensure CORS headers on 500 errors
+            # Shield internal errors but maintain CORS headers for debugging
             response = JSONResponse(
                 status_code=500,
                 content={"detail": "Internal Server Error", "msg": str(e)}
             )
-            if origin:
-                response.headers["Access-Control-Allow-Origin"] = origin
-                response.headers["Access-Control-Allow-Credentials"] = "true"
-        
-        if origin:
-            # Allow any .vercel.app subdomain or localhost
-            if ".vercel.app" in origin or "localhost" in origin or "127.0.0.1" in origin:
-                response.headers["Access-Control-Allow-Origin"] = origin
-                response.headers["Access-Control-Allow-Credentials"] = "true"
-                response.headers["Access-Control-Allow-Methods"] = "*"
-                response.headers["Access-Control-Allow-Headers"] = "*"
-                response.headers["Access-Control-Expose-Headers"] = "*"
+            
+        if is_allowed:
+            response.headers["Access-Control-Allow-Origin"] = origin or "*"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
         
         return response
 

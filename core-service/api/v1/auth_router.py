@@ -5,9 +5,11 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 from pydantic import BaseModel, EmailStr
 
+from sqlalchemy import func
 from db.session import get_db
 from domain.users.models import User
-from domain.products.models import Product
+from domain.products.models import Product, Comment
+from domain.orders.models import Order
 from core.config import settings
 from jose import jwt
 import bcrypt
