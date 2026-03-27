@@ -30,22 +30,49 @@ async def startup_event():
         print(f"Warning: Local DB initialization failed: {e}")
         print("The app will continue but DB-dependent features might fail until correctly configured in Choreo.")
 
-# CORS configuration
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://too-fly.vercel.app",
-]
+# Enhanced CORS configuration
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_origin_regex=r"https://too-.*\.vercel\.app",
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-)
+class DynamicCORSMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        origin = request.headers.get("origin")
+        
+        # Preflight handling
+        if request.method == "OPTIONS":
+            response = JSONResponse(content="OK")
+            if origin:
+                response.headers["Access-Control-Allow-Origin"] = origin
+                response.headers["Access-Control-Allow-Credentials"] = "true"
+                response.headers["Access-Control-Allow-Methods"] = "*"
+                response.headers["Access-Control-Allow-Headers"] = "*"
+            return response
+        
+        try:
+            response = await call_next(request)
+        except Exception as e:
+            # Ensure CORS headers on 500 errors
+            response = JSONResponse(
+                status_code=500,
+                content={"detail": "Internal Server Error", "msg": str(e)}
+            )
+            if origin:
+                response.headers["Access-Control-Allow-Origin"] = origin
+                response.headers["Access-Control-Allow-Credentials"] = "true"
+        
+        if origin:
+            # Allow any .vercel.app subdomain or localhost
+            if ".vercel.app" in origin or "localhost" in origin or "127.0.0.1" in origin:
+                response.headers["Access-Control-Allow-Origin"] = origin
+                response.headers["Access-Control-Allow-Credentials"] = "true"
+                response.headers["Access-Control-Allow-Methods"] = "*"
+                response.headers["Access-Control-Allow-Headers"] = "*"
+                response.headers["Access-Control-Expose-Headers"] = "*"
+        
+        return response
+
+app.add_middleware(DynamicCORSMiddleware)
+
 
 
 # Static Files (for images) - Use /tmp for writable storage on Read-only FS
