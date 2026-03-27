@@ -13,6 +13,11 @@ from core.config import settings
 from db.session import engine
 from db.base import Base 
 
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version=settings.PROJECT_VERSION
+)
+
 # Database initialization wrapped in startup event to prevent pod crashes on intermittent DB connectivity
 @app.on_event("startup")
 async def startup_event():
@@ -25,18 +30,12 @@ async def startup_event():
         print(f"Warning: Local DB initialization failed: {e}")
         print("The app will continue but DB-dependent features might fail until correctly configured in Choreo.")
 
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    version=settings.PROJECT_VERSION
-)
-
 # CORS configuration
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://57dd5a30-006e-4019-9466-63f44aa32fc4.e1-eu-north-azure.choreoapps.dev",
-    "https://57dd5a30-006e-4019-9466-63f44aa32fc4.e1-eu-north-azure.choreoapps.dev/",
-    "*.choreoapps.dev",
+    "*.vercel.app",
+    "http://localhost:*",
 ]
 
 app.add_middleware(
@@ -70,4 +69,5 @@ def read_root():
     return {"status": "operational", "service": "Core Orchestrator"}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

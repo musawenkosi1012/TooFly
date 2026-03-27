@@ -67,27 +67,16 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     # Standard check: Find user by email
     user = db.query(User).filter(User.email == form_data.username).first()
     
-    # FOR DEMO: If no user exists, let's create a default admin so you can log in
+    # Verify user exists
     if not user:
-        if form_data.username == "admin@toofly.com" and form_data.password == "admin123":
-            new_user = User(
-                email="admin@toofly.com",
-                hashed_password=hash_password("admin123"),
-                role="owner",
-                is_active=True
-            )
-            db.add(new_user)
-            db.commit()
-            db.refresh(new_user)
-            user = new_user
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect email or password",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
     if not verify_password(form_data.password, user.hashed_password):
+        print(f"WARNING: Login attempt failed for {form_data.username}. Incorrect password.")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",

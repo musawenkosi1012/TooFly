@@ -7,21 +7,21 @@ class Settings(BaseSettings):
     PROJECT_VERSION: str = "2.0.0"
     API_V1_STR: str = "/api/v1"
 
-    # Database (Defaults provided to prevent crash on startup if not set in Choreo)
+    # Database (Safe defaults to prevent startup crashes if env variables are missing)
     DB_USER: str = "postgres"
     DB_PASSWORD: str = ""
     DB_HOST: str = "localhost"
     DB_PORT: str = "5432"
     DB_NAME: str = "postgres"
 
-    # JWT
-    SECRET_KEY: str = "REPLACE_ME_PRODUCTION_SECRET_KEY"
+    # JWT (Safe non-secret placeholders)
+    SECRET_KEY: str = "UNSET_REPLACE_ME"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
     # External
-    PAYMENT_SERVICE_URL: str = "http://payment-service:9000"
-    INTERNAL_API_KEY: str = "internal_api_key_placeholder"
+    PAYMENT_SERVICE_URL: str = "http://localhost:8002"
+    INTERNAL_API_KEY: str = "UNSET_INTERNAL_KEY"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

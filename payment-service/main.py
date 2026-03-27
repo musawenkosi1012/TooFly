@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router
 from core.config import settings
+import os
 import uvicorn
 
 app = FastAPI(
@@ -24,4 +25,5 @@ def read_root():
     return {"status": "operational", "service": "Payment Service"}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8002)
+    port = int(os.getenv("PORT", 9000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

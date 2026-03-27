@@ -1,8 +1,0 @@
-schemaVersion: 1.1
-endpoints:
-  - name: core-api
-    type: REST
-    context: /
-    networkVisibility: Public
-    service:
-      port: 8000

@@ -21,8 +21,12 @@ def hash_password_direct(password: str):
 def seed_admin():
     db: Session = SessionLocal()
     try:
-        email = "admin@toofly.com"
-        password = "Musa2005"
+        email = os.getenv("ADMIN_EMAIL", "admin@toofly.com")
+        password = os.getenv("ADMIN_PASSWORD")
+        
+        if not password:
+            print("Error: ADMIN_PASSWORD environment variable not set.")
+            return
         
         print(f"Target Email: {email}")
         print(f"Password length: {len(password)}")

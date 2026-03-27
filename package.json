@@ -1,0 +1,16 @@
+{
+  "name": "toofly-workspace",
+  "version": "1.0.0",
+  "description": "TooFly Microservices Root Orchestration",
+  "main": "index.js",
+  "scripts": {
+    "install:all": "npm install --prefix frontend && pip install -r core-service/requirements.txt && pip install -r payment-service/requirements.txt",
+    "core": "cd core-service && uvicorn main:app --host 0.0.0.0 --port 8000 --reload",
+    "payment": "cd payment-service && uvicorn main:app --host 0.0.0.0 --port 9000 --reload",
+    "frontend": "npm run dev --prefix frontend",
+    "dev": "concurrently \"npm run core\" \"npm run payment\" \"npm run frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
