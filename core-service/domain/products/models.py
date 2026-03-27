@@ -1,5 +1,5 @@
+from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey
 from db.base_class import Base
 
 class Product(Base):
@@ -16,6 +16,16 @@ class Product(Base):
     # Relationships
     images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan")
     comments = relationship("Comment", back_populates="product", cascade="all, delete-orphan")
+    likes = relationship("ProductLike", back_populates="product", cascade="all, delete-orphan")
+
+class ProductLike(Base):
+    __tablename__ = "product_likes"
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"))
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    
+    product = relationship("Product", back_populates="likes")
+    __table_args__ = (UniqueConstraint('product_id', 'user_id', name='_user_product_like_uc'),)
 
 class Comment(Base):
     __tablename__ = "comments"

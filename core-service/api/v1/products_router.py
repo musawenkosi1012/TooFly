@@ -1,9 +1,31 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from db.session import get_db
-from domain.products.models import Product, ProductImage, Comment
-from typing import List
+from domain.products.models import Product, ProductImage, Comment, ProductLike
+from domain.users.models import User
+from typing import List, Optional
 from datetime import datetime
+from core.config import settings
+from jose import jwt
+from fastapi.security import OAuth2PasswordBearer
+
+reusable_oauth2 = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.API_V1_STR}/login"
+)
+
+def get_current_user(db: Session = Depends(get_db), token: str = Depends(reusable_oauth2)):
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        email = payload.get("sub")
+        if email is None:
+            raise HTTPException(status_code=401, detail="Could not validate credentials")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Could not validate credentials")
+    
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
 
 router = APIRouter(prefix="/products")
 
@@ -71,22 +93,40 @@ def add_product_images(product_id: int, payload: dict, db: Session = Depends(get
     return {"status": "success", "added": len(urls)}
 
 @router.post("/{product_id}/like", response_model=dict)
-def like_product(product_id: int, db: Session = Depends(get_db)):
+def like_product(product_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    product.likes_count += 1
-    db.commit()
-    return {"status": "liked", "new_count": product.likes_count}
+    
+    # Check if already liked
+    existing_like = db.query(ProductLike).filter(
+        ProductLike.product_id == product_id,
+        ProductLike.user_id == current_user.id
+    ).first()
+    
+    if existing_like:
+        # Unlike
+        db.delete(existing_like)
+        product.likes_count = max(0, product.likes_count - 1)
+        db.commit()
+        return {"status": "unliked", "new_count": product.likes_count, "is_liked": False}
+    else:
+        # Like
+        new_like = ProductLike(product_id=product_id, user_id=current_user.id)
+        db.add(new_like)
+        product.likes_count += 1
+        db.commit()
+        return {"status": "liked", "new_count": product.likes_count, "is_liked": True}
 
 @router.post("/{product_id}/comment", response_model=dict)
-def add_comment(product_id: int, payload: dict, db: Session = Depends(get_db)):
+def add_comment(product_id: int, payload: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
     new_comment = Comment(
         product_id=product_id,
+        user_id=current_user.id,
         content=payload["content"]
     )
     db.add(new_comment)
