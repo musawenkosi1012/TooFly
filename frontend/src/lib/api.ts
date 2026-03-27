@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://1d2518ee-f9d3-4e39-961c-7770f8941863-dev.e1-eu-north-azure.choreoapis.dev/default/core-service/v1.0/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://too-fly-spha.vercel.app/api/v1";
 
 export interface Product {
     id: number;
