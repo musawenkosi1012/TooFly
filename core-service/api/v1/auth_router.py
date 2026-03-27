@@ -97,16 +97,32 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         }
     }
 
+@router.get("/ready")
+@router.get("/v1/ready")
+async def health_check():
+    return {"status": "ready", "timestamp": str(datetime.now(timezone.utc))}
+
+# Compatibility Aliases for older/cached frontend requests
+@router.post("/v1/login")
+async def login_compat(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    return await login(form_data, db)
+
+@router.post("/v1/register")
+async def register_compat(user_in: UserRegister, db: Session = Depends(get_db)):
+    return await register(user_in, db)
+
 @router.get("/owner/dashboard")
 async def owner_dashboard(db: Session = Depends(get_db)):
     return {
-        "active_drops": db.query(Product).count(),
-        "stream_traffic": 1240,
-        "conversion": "12.5%",
+        "active_products": db.query(Product).count(),
+        "total_traffic": 1240,
+        "conversion_rate": 12.5,
         "recent_sales": []
     }
 
-# Catch double /api/api calls if frontend is misconfigured
+# Catch double /api/api or /api/v1 calls if frontend is misconfigured
 @router.get("/api/owner/dashboard")
+@router.get("/v1/owner/dashboard")
 async def owner_dashboard_compat(db: Session = Depends(get_db)):
     return await owner_dashboard(db)
+
