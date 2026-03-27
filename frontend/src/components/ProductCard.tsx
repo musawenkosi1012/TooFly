@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Heart, Plus, Expand, ChevronLeft, ChevronRight, MessageCircle, X } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import { API_ROOT } from "@/lib/api"
 
 export interface Product {
     id: number | string
@@ -44,8 +45,7 @@ export default function ProductCard({ product, delay = 0 }: ProductCardProps) {
         }
 
         try {
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/api"
-            const commentUrl = baseUrl.endsWith("/api") ? baseUrl.replace("/api", "") + `/api/products/${product.id}/comments` : `${baseUrl}/api/products/${product.id}/comments`
+            const commentUrl = `${API_ROOT}/products/${product.id}/comments`
             const res = await fetch(commentUrl, {
                 method: "POST",
                 headers: {
@@ -87,8 +87,7 @@ export default function ProductCard({ product, delay = 0 }: ProductCardProps) {
         setLocalLikesCount(prev => originalLiked ? Math.max(0, prev - 1) : prev + 1)
 
         try {
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/api"
-            const likeUrl = baseUrl.endsWith("/api") ? baseUrl.replace("/api", "") + `/api/products/${product.id}/like` : `${baseUrl}/api/products/${product.id}/like`
+            const likeUrl = `${API_ROOT}/products/${product.id}/like`
             
             const res = await fetch(likeUrl, {
                 method: "POST",
@@ -114,7 +113,16 @@ export default function ProductCard({ product, delay = 0 }: ProductCardProps) {
         }
     }
 
-    const allImages = [product.image_url, ...(product.images || []).map(img => img.url)]
+    const formatImageUrl = (url: string) => {
+        if (!url) return "";
+        if (url.startsWith("http")) return url;
+        return `${API_ROOT}${url.startsWith("/") ? "" : "/"}${url.startsWith("static/") ? "" : "static/"}${url}`;
+    };
+
+    const allImages = [
+        formatImageUrl(product.image_url),
+        ...(product.images || []).map(img => formatImageUrl(img.url))
+    ].filter(url => url !== "");
 
     const nextImage = (e: React.MouseEvent) => {
         e.preventDefault()
