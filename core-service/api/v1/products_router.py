@@ -1,14 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from db.session import get_db
-from domain.products.models import Product
+from domain.products.models import Product, ProductImage
 from typing import List
 
 router = APIRouter(prefix="/products")
 
 @router.get("/", response_model=List[dict])
 def get_products(db: Session = Depends(get_db)):
-    products = db.query(Product).all()
+    products = db.query(Product).options(joinedload(Product.images)).all()
     # Simple formatting for frontend compatibility
     return [
         {
@@ -18,6 +17,7 @@ def get_products(db: Session = Depends(get_db)):
             "price": p.price,
             "category": p.category,
             "image_url": p.image_url,
+            "images": [{"id": img.id, "url": img.url} for img in p.images],
             "stock": p.stock,
             "likes_count": p.likes_count
         } for p in products
@@ -52,6 +52,20 @@ def wipe_all_products(db: Session = Depends(get_db)):
     count = db.query(Product).delete()
     db.commit()
     return {"status": "wiped", "count": count}
+
+@router.post("/{product_id}/images", response_model=dict)
+def add_product_images(product_id: int, payload: dict, db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    urls = payload.get("urls", [])
+    for url in urls:
+        new_img = ProductImage(product_id=product_id, url=url)
+        db.add(new_img)
+    
+    db.commit()
+    return {"status": "success", "added": len(urls)}
 
 @router.post("/seed", response_model=dict)
 def seed_products(db: Session = Depends(get_db)):

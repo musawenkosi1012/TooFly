@@ -123,7 +123,8 @@ export default function AdminDashboard() {
                 const res = await fetch(uploadUrl, { method: "POST", body: formData })
                 if (res.ok) {
                     const data = await res.json()
-                    uploadedUrls.push(`${API_ROOT}${data.image_url}`)
+                    const finalUrl = data.image_url.startsWith('data:') ? data.image_url : `${API_ROOT}${data.image_url}`
+                    uploadedUrls.push(finalUrl)
                 }
             }
             
@@ -265,7 +266,7 @@ export default function AdminDashboard() {
                                                                 src={product.image_url} 
                                                                 alt="" 
                                                                 className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all bg-gray-200 dark:bg-zinc-800" 
-                                                                onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=100' }}
+                                                                onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0' }}
                                                             />
                                                         </div>
                                                         <span className="font-bold uppercase italic tracking-tight">{product.name}</span>
