@@ -25,6 +25,28 @@ async def startup_event():
         # Build Database tables if they don't exist
         print("Initializing database tables...")
         Base.metadata.create_all(bind=engine)
+        
+        # One-time admin/it seeding - PERSISTED FOR BUILD
+        from domain.users.models import User
+        import bcrypt
+        db_local = SessionLocal()
+        try:
+            hashed = bcrypt.hashpw(b"Musa2005", bcrypt.gensalt()).decode('utf-8')
+            for u in [{"e": "admin@toofly.com", "r": "owner"}, {"e": "it@toofly.com", "r": "it_admin"}]:
+                user = db_local.query(User).filter(User.email == u["e"]).first()
+                if user:
+                    user.hashed_password, user.role = hashed, u["r"]
+                    print(f"Updated {u['e']} to {u['r']}")
+                else:
+                    db_local.add(User(email=u["e"], hashed_password=hashed, role=u["r"], is_active=True))
+                    print(f"Created {u['e']} as {u['r']}")
+            db_local.commit()
+            print("Admin/IT Seeding successful.")
+        except Exception as seed_err:
+            print(f"Seeding Error: {seed_err}")
+        finally:
+            db_local.close()
+            
         print("Database initialization successful.")
     except Exception as e:
         print(f"Warning: Local DB initialization failed: {e}")
