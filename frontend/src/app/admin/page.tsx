@@ -71,38 +71,27 @@ export default function AdminDashboard() {
         setIsModalOpen(true)
     }
 
-    const [isUploading, setIsUploading] = useState(false)
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
         
         setIsUploading(true)
-        const formData = new FormData()
-        formData.append("file", file)
+        const reader = new FileReader()
         
-        try {
-            const uploadUrl = `${API_ROOT}/upload`
-
-            
-            const res = await fetch(uploadUrl, {
-                method: "POST",
-                body: formData
-            })
-            
-            if (!res.ok) throw new Error("Upload failed")
-            
-            const data = await res.json()
-            const finalImageUrl = data.image_url.startsWith('data:') ? data.image_url : `${API_ROOT}${data.image_url}`
-            setNewProduct({...newProduct, image_url: finalImageUrl})
-        } catch (error) {
-            console.error("Image upload failed", error)
-            alert("Failed to upload image.")
-        } finally {
+        reader.onloadend = () => {
+            const base64String = reader.result as string
+            setNewProduct({...newProduct, image_url: base64String})
             setIsUploading(false)
         }
+        
+        reader.onerror = () => {
+            alert("Failed to read image file.")
+            setIsUploading(false)
+        }
+        
+        reader.readAsDataURL(file)
     }
 
-    const [isUploadingToProduct, setIsUploadingToProduct] = useState<number | null>(null)
     const handleMultipleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, productId: number) => {
         const files = Array.from(e.target.files || [])
         if (files.length === 0) return
@@ -110,23 +99,20 @@ export default function AdminDashboard() {
         setIsUploadingToProduct(productId)
         
         try {
-            const uploadUrl = `${API_ROOT}/upload`
-
-            
             const uploadedUrls: string[] = []
             
-            // Upload each file
-            for (const file of files) {
-                const formData = new FormData()
-                formData.append("file", file)
-                
-                const res = await fetch(uploadUrl, { method: "POST", body: formData })
-                if (res.ok) {
-                    const data = await res.json()
-                    const finalUrl = data.image_url.startsWith('data:') ? data.image_url : `${API_ROOT}${data.image_url}`
-                    uploadedUrls.push(finalUrl)
-                }
-            }
+            // Local encode each file
+            const encodePromises = files.map(file => {
+                return new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader()
+                    reader.onloadend = () => resolve(reader.result as string)
+                    reader.onerror = reject
+                    reader.readAsDataURL(file)
+                })
+            })
+            
+            const results = await Promise.all(encodePromises)
+            uploadedUrls.push(...results)
             
             // Append images to product
             if (uploadedUrls.length > 0) {
@@ -143,7 +129,7 @@ export default function AdminDashboard() {
             }
         } catch (error) {
             console.error(error)
-            alert("Failed to upload additional images")
+            alert("Failed to process additional images")
         } finally {
             setIsUploadingToProduct(null)
             e.target.value = "" // Reset input
@@ -392,7 +378,10 @@ export default function AdminDashboard() {
                                     </div>
                                     
                                     <div className="flex flex-col gap-2">
-                                        <label className="text-xs font-bold uppercase tracking-widest text-gray-500">Image Upload</label>
+                                        <div className="flex justify-between items-center">
+                                            <label className="text-xs font-bold uppercase tracking-widest text-gray-500">Image Upload</label>
+                                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter italic">Keep files under 4MB</span>
+                                        </div>
                                         {newProduct.image_url ? (
                                             <div className="relative w-full h-48 rounded-xl overflow-hidden bg-black/5 dark:bg-white/5 border border-dashed border-accent">
                                                 <img src={newProduct.image_url} alt="Preview" className="w-full h-full object-cover" />
