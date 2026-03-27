@@ -1,7 +1,8 @@
 schemaVersion: 1.1
 endpoints:
-  - name: Frontend Web App
-    port: 3000
+  - name: frontend-app
     type: REST
     context: /
     networkVisibility: Public
+    service:
+      port: 3000

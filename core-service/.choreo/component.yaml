@@ -1,7 +1,8 @@
 schemaVersion: 1.1
 endpoints:
-  - name: Core REST API
-    port: 8000
+  - name: core-api
     type: REST
     context: /
     networkVisibility: Public
+    service:
+      port: 8000
