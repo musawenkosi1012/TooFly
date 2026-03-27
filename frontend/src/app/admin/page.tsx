@@ -39,8 +39,9 @@ export default function AdminPage() {
             
             if (dashRes.ok) {
                 const dashData = await dashRes.json()
-                setStatsData(dashData.stats)
+                setStatsData(dashData)
             }
+
             setProducts(productData)
         } catch (err) {
             console.error("Dashboard sync error:", err)
