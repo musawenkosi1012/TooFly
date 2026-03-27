@@ -75,13 +75,22 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    if not verify_password(form_data.password, user.hashed_password):
-        print(f"WARNING: Login attempt failed for {form_data.username}. Incorrect password.")
+    # Safely verify password; if hash is invalid/legacy, it may raise ValueError in bcrypt
+    password_ok = False
+    try:
+        password_ok = verify_password(form_data.password, user.hashed_password)
+    except Exception as e:
+        print(f"CRITICAL: Password verification crash for {form_data.username}: {e}")
+        password_ok = False
+
+    if not password_ok:
+        print(f"WARNING: Login attempt failed for {form_data.username}. Authentication denied.")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
         
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
