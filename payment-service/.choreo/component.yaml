@@ -1,7 +1,7 @@
-version: "0.1"
+schemaVersion: 1.1
 endpoints:
-  - name: Core REST API
-    port: 8000
+  - name: Payment REST API
+    port: 9000
     type: REST
     context: /
     networkVisibility: Public

@@ -1,4 +1,4 @@
-version: "0.1"
+schemaVersion: 1.1
 endpoints:
   - name: Frontend Web App
     port: 3000
