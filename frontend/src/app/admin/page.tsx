@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Package, TrendingUp, Activity, Plus, Trash2, Loader2, Search, X, ImagePlus } from "lucide-react"
-import { fetchProducts, createProduct, Product } from "@/lib/api"
+import { fetchProducts, createProduct, Product, API_ROOT, API_V1 } from "@/lib/api"
 import ProductCard from "@/components/ProductCard"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { useRouter } from "next/navigation"
@@ -25,8 +25,6 @@ export default function AdminPage() {
     })
     
     const router = useRouter()
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://1d2518ee-f9d3-4e39-961c-7770f8941863-dev.e1-eu-north-azure.choreoapis.dev/default/core-service/v1.0/api"
-    const cleanBaseUrl = baseUrl.endsWith("/api") ? baseUrl.replace("/api", "") : baseUrl
 
     async function loadDashboard() {
         try {
@@ -34,7 +32,7 @@ export default function AdminPage() {
             
             const [productData, dashRes] = await Promise.all([
                 fetchProducts(),
-                fetch(`${cleanBaseUrl}/api/owner/dashboard`, {
+                fetch(`${API_ROOT}/owner/dashboard`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 })
             ])
@@ -58,7 +56,7 @@ export default function AdminPage() {
     const handleDelete = async (id: number) => {
         if (!confirm("Are you sure you want to remove this piece from the stream?")) return
         try {
-            await fetch(`${cleanBaseUrl}/api/products/${id}`, {
+            await fetch(`${API_ROOT}/products/${id}`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
             })
@@ -83,8 +81,8 @@ export default function AdminPage() {
         formData.append("file", file)
         
         try {
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
-            const uploadUrl = baseUrl.endsWith("/api") ? baseUrl.replace("/api", "") + "/api/upload" : `${baseUrl}/api/upload`
+            const uploadUrl = `${API_ROOT}/upload`
+
             
             const res = await fetch(uploadUrl, {
                 method: "POST",
@@ -94,7 +92,7 @@ export default function AdminPage() {
             if (!res.ok) throw new Error("Upload failed")
             
             const data = await res.json()
-            setNewProduct({...newProduct, image_url: `${cleanBaseUrl}${data.image_url}`})
+            setNewProduct({...newProduct, image_url: `${API_ROOT}${data.image_url}`})
         } catch (error) {
             console.error("Image upload failed", error)
             alert("Failed to upload image.")
@@ -111,8 +109,8 @@ export default function AdminPage() {
         setIsUploadingToProduct(productId)
         
         try {
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
-            const uploadUrl = baseUrl.endsWith("/api") ? baseUrl.replace("/api", "") + "/api/upload" : `${baseUrl}/api/upload`
+            const uploadUrl = `${API_ROOT}/upload`
+
             
             const uploadedUrls: string[] = []
             
@@ -124,13 +122,13 @@ export default function AdminPage() {
                 const res = await fetch(uploadUrl, { method: "POST", body: formData })
                 if (res.ok) {
                     const data = await res.json()
-                    uploadedUrls.push(`${cleanBaseUrl}${data.image_url}`)
+                    uploadedUrls.push(`${API_ROOT}${data.image_url}`)
                 }
             }
             
             // Append images to product
             if (uploadedUrls.length > 0) {
-                const attachUrl = `${cleanBaseUrl}/api/products/${productId}/images`
+                const attachUrl = `${API_ROOT}/products/${productId}/images`
                 const attachRes = await fetch(attachUrl, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },

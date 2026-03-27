@@ -1,4 +1,8 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+// Resilient API URL resolution: ensures we always have a clean /api root regardless of whether /v1 is appended in env
+const rawUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace(/\/$/, "");
+export const API_ROOT = rawUrl.replace(/\/v1(\/|$)/, "$1").replace(/\/$/, ""); // Strip /v1 if present to get auth base
+export const API_V1 = API_ROOT.endsWith("/v1") ? API_ROOT : `${API_ROOT}/v1`; // Ported from products endpoint
+
 
 export interface Product {
     id: number;
@@ -27,7 +31,7 @@ export async function login(email: string, password: string): Promise<AuthRespon
     formData.append("username", email);
     formData.append("password", password);
 
-    const response = await fetch(`${API_BASE_URL.replace("/api", "")}/api/login`, {
+    const response = await fetch(`${API_ROOT}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formData,
@@ -43,7 +47,7 @@ export async function login(email: string, password: string): Promise<AuthRespon
 }
 
 export async function register(email: string, password: string): Promise<User> {
-    const response = await fetch(`${API_BASE_URL}/register`, {
+    const response = await fetch(`${API_ROOT}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -68,14 +72,14 @@ export function getAuthToken() {
 }
 
 export async function fetchProducts(): Promise<Product[]> {
-    const response = await fetch(`${API_BASE_URL}/products`);
+    const response = await fetch(`${API_V1}/products`);
     if (!response.ok) throw new Error("Failed to fetch products");
     return response.json();
 }
 
 export async function createProduct(product: Omit<Product, "id" | "likes_count">): Promise<Product> {
     const token = getAuthToken();
-    const response = await fetch(`${API_BASE_URL}/products`, {
+    const response = await fetch(`${API_V1}/products`, {
         method: "POST",
         headers: { 
             "Content-Type": "application/json",
@@ -89,7 +93,7 @@ export async function createProduct(product: Omit<Product, "id" | "likes_count">
 
 export async function deleteProduct(id: number): Promise<void> {
     const token = getAuthToken();
-    const response = await fetch(`${API_BASE_URL}/products/${id}`, {
+    const response = await fetch(`${API_V1}/products/${id}`, {
         method: "DELETE",
         headers: {
             ...(token ? { "Authorization": `Bearer ${token}` } : {})
@@ -99,6 +103,6 @@ export async function deleteProduct(id: number): Promise<void> {
 }
 
 export async function seedProducts(): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/seed`, { method: "POST" });
+    const response = await fetch(`${API_V1}/seed`, { method: "POST" });
     if (!response.ok) throw new Error("Failed to seed products");
 }
