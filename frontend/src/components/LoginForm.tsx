@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import { Loader2, Mail, Lock, ArrowRight } from "lucide-react"
-import { login } from "@/lib/api"
-import { useRouter } from "next/navigation"
+import { login, API_ROOT } from "@/lib/api"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function LoginForm() {
     const [email, setEmail] = useState("")
@@ -11,6 +11,8 @@ export default function LoginForm() {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState("")
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const redirectUrl = searchParams.get("redirect") || "/catalogue"
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -20,7 +22,7 @@ export default function LoginForm() {
             const data = await login(email, password)
             if (data.user.role === "owner") router.push("/admin")
             else if (data.user.role === "it_admin") router.push("/monitor")
-            else router.push("/")
+            else router.push(redirectUrl)
             router.refresh()
         } catch (err: any) {
             setError(err.message)

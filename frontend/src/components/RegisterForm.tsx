@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Loader2, Mail, Lock, UserPlus } from "lucide-react"
 import { register } from "@/lib/api"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function RegisterForm() {
     const [email, setEmail] = useState("")
@@ -12,6 +12,8 @@ export default function RegisterForm() {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState("")
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const redirectUrl = searchParams.get("redirect") || "/catalogue"
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -24,7 +26,8 @@ export default function RegisterForm() {
         try {
             await register(email, password)
             // Redirect or switch mode locally
-            router.push("/login?auth=signin")
+            // Redirect to login with the intent to go back to the original destination
+            router.push(`/login?mode=signin&redirect=${encodeURIComponent(redirectUrl)}`)
         } catch (err: any) {
             setError(err.message)
         } finally {
