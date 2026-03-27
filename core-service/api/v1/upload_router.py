@@ -10,24 +10,19 @@ router = APIRouter()
 UPLOAD_DIR = pathlib.Path("/tmp/static/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+import base64
+
 @router.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
-    # Simple validation
+    # Validation
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Only images are allowed")
     
-    # Generate a unique filename
-    extension = pathlib.Path(file.filename).suffix or ".jpg"
-    filename = f"{uuid.uuid4()}{extension}"
-    file_path = UPLOAD_DIR / filename
-    
-    # Save the file
+    # Read the file and convert to Base64
     try:
-        with file_path.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        content = await file.read()
+        encoded = base64.b64encode(content).decode('utf-8')
+        data_uri = f"data:{file.content_type};base64,{encoded}"
+        return {"image_url": data_uri}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not save file: {e}")
-    
-    # Return the relative URL. 
-    # The frontend will prepend the API base URL if needed, or the browser will resolve if the app is on the same host.
-    return {"image_url": f"/static/uploads/{filename}"}
+        raise HTTPException(status_code=500, detail=f"Could not encode file: {e}")

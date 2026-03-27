@@ -93,7 +93,8 @@ export default function AdminPage() {
             if (!res.ok) throw new Error("Upload failed")
             
             const data = await res.json()
-            setNewProduct({...newProduct, image_url: `${API_ROOT}${data.image_url}`})
+            const finalImageUrl = data.image_url.startsWith('data:') ? data.image_url : `${API_ROOT}${data.image_url}`
+            setNewProduct({...newProduct, image_url: finalImageUrl})
         } catch (error) {
             console.error("Image upload failed", error)
             alert("Failed to upload image.")

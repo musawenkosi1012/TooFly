@@ -115,7 +115,7 @@ export default function ProductCard({ product, delay = 0 }: ProductCardProps) {
 
     const formatImageUrl = (url: string) => {
         if (!url) return "";
-        if (url.startsWith("http")) return url;
+        if (url.startsWith("http") || url.startsWith("data:")) return url;
         return `${API_ROOT}${url.startsWith("/") ? "" : "/"}${url.startsWith("static/") ? "" : "static/"}${url}`;
     };
 
