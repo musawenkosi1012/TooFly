@@ -73,26 +73,50 @@ export default function AdminDashboard() {
         setIsModalOpen(true)
     }
 
+    const resizeImage = (file: File, maxWidth: number = 1024): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx?.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.8));
+                };
+                img.onerror = reject;
+            };
+            reader.onerror = reject;
+        });
+    };
+
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        if (!file) return
+        const file = e.target.files?.[0];
+        if (!file) return;
         
-        setIsUploading(true)
-        const reader = new FileReader()
-        
-        reader.onloadend = () => {
-            const base64String = reader.result as string
-            setNewProduct({...newProduct, image_url: base64String})
-            setIsUploading(false)
+        setIsUploading(true);
+        try {
+            const optimizedBase64 = await resizeImage(file);
+            setNewProduct({...newProduct, image_url: optimizedBase64});
+        } catch (err) {
+            console.error("Image optimization failed", err);
+            alert("Failed to process image.");
+        } finally {
+            setIsUploading(false);
         }
-        
-        reader.onerror = () => {
-            alert("Failed to read image file.")
-            setIsUploading(false)
-        }
-        
-        reader.readAsDataURL(file)
-    }
+    };
 
     const handleMultipleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, productId: number) => {
         const files = Array.from(e.target.files || [])
@@ -101,32 +125,29 @@ export default function AdminDashboard() {
         setIsUploadingToProduct(productId)
         
         try {
-            const uploadedUrls: string[] = []
+            const optimizedUrls = await Promise.all(
+                files.map(file => resizeImage(file, 800)) // Use slightly smaller for thumbnails
+            );
             
-            // Local encode each file
-            const encodePromises = files.map(file => {
-                return new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader()
-                    reader.onloadend = () => resolve(reader.result as string)
-                    reader.onerror = reject
-                    reader.readAsDataURL(file)
-                })
-            })
-            
-            const results = await Promise.all(encodePromises)
-            uploadedUrls.push(...results)
-            
-            // Append images to product
-            if (uploadedUrls.length > 0) {
+            // Append images to product with AUTH headers
+            if (optimizedUrls.length > 0) {
+                const token = sessionStorage.getItem("token")
                 const attachUrl = `${API_ROOT}/products/${productId}/images`
                 const attachRes = await fetch(attachUrl, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ urls: uploadedUrls })
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ urls: optimizedUrls })
                 })
                 
                 if (attachRes.ok) {
                    await loadDashboard()
+                } else {
+                   const err = await attachRes.json()
+                   console.error("Link failed:", err)
+                   alert(`Failed to link pictures: ${err.detail || 'Access Denied'}`)
                 }
             }
         } catch (error) {
