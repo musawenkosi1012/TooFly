@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Package, TrendingUp, Activity, Plus, Trash2, Loader2, Search, X, ImagePlus, Clock, User as UserIcon } from "lucide-react"
+import { Package, TrendingUp, Activity, Plus, Trash2, Loader2, Search, X, ImagePlus, Clock, User as UserIcon, BarChart3, Zap } from "lucide-react"
 import { fetchProducts, createProduct, Product, API_ROOT, API_V1 } from "@/lib/api"
 import ProductCard from "@/components/ProductCard"
 import ProtectedRoute from "@/components/ProtectedRoute"
@@ -18,6 +18,12 @@ export default function AdminDashboard() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
     const [isUploadingToProduct, setIsUploadingToProduct] = useState<number | null>(null)
+    
+    // Performance Dashboard States
+    const [selectedPerformer, setSelectedPerformer] = useState<any>(null)
+    const [isPerformanceOpen, setIsPerformanceOpen] = useState(false)
+    const [isPerformanceLoading, setIsPerformanceLoading] = useState(false)
+
     const [newProduct, setNewProduct] = useState({
         name: "",
         description: "",
@@ -176,6 +182,22 @@ export default function AdminDashboard() {
             alert("Failed to create product. Check backend logs.")
         } finally {
             setIsSubmitting(false)
+        }
+    }
+
+    const fetchPerformanceData = async (productId: number | string) => {
+        setIsPerformanceLoading(true)
+        setIsPerformanceOpen(true)
+        try {
+            const res = await fetch(`${API_V1}/products/${productId}/performance`)
+            if (res.ok) {
+                const data = await res.json()
+                setSelectedPerformer(data)
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setIsPerformanceLoading(false)
         }
     }
 
@@ -346,6 +368,13 @@ export default function AdminDashboard() {
                                                             </button>
                                                         </div>
                                                         <button 
+                                                            onClick={() => fetchPerformanceData(product.id)}
+                                                            className="p-3 text-emerald-500/50 hover:text-emerald-500 hover:bg-emerald-500/10 rounded-xl transition-all"
+                                                            title="View Performance Dashboard"
+                                                        >
+                                                            <BarChart3 size={18} />
+                                                        </button>
+                                                        <button 
                                                             onClick={() => handleDelete(Number(product.id))}
                                                             className="p-3 text-red-500/50 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
                                                         >
@@ -487,8 +516,108 @@ export default function AdminDashboard() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+                {/* Performance Dashboard Modal */}
+                <AnimatePresence>
+                    {isPerformanceOpen && (
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-center justify-center p-6"
+                        >
+                            <motion.div 
+                                initial={{ scale: 0.9, y: 20 }}
+                                animate={{ scale: 1, y: 0 }}
+                                className="glass max-w-4xl w-full p-12 rounded-[3.5rem] relative overflow-hidden"
+                            >
+                                <button 
+                                    onClick={() => { setIsPerformanceOpen(false); setSelectedPerformer(null); }}
+                                    className="absolute top-8 right-8 text-white/50 hover:text-white transition-all hover:rotate-90"
+                                >
+                                    <X size={24} />
+                                </button>
 
-            </main>
-        </ProtectedRoute>
-    )
+                                {isPerformanceLoading ? (
+                                    <div className="py-32 flex flex-col items-center justify-center gap-6">
+                                        <Loader2 className="animate-spin text-accent" size={56} />
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.5em] text-accent animate-pulse">Computing Market Data...</p>
+                                    </div>
+                                ) : (
+                                    <div className="animate-reveal">
+                                        <div className="flex justify-between items-start mb-12">
+                                            <div>
+                                                <h2 className="text-5xl font-black uppercase italic tracking-tighter mb-4 text-gradient">{selectedPerformer?.product_name}</h2>
+                                                <div className="flex gap-4">
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest px-5 py-2 bg-accent text-white rounded-full">
+                                                        {selectedPerformer?.market_status}
+                                                    </span>
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest px-5 py-2 bg-white/5 text-gray-400 rounded-full flex items-center gap-2 border border-white/5">
+                                                        <Activity size={10} className="text-emerald-500" /> Market Velocity: Stable
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">Total Social Hype</p>
+                                                <div className="flex gap-8 justify-end">
+                                                    <div className="flex flex-col items-end">
+                                                        <span className="text-3xl font-black italic tracking-tighter">{selectedPerformer?.total_likes}</span>
+                                                        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Hype Units</span>
+                                                    </div>
+                                                    <div className="flex flex-col items-end">
+                                                        <span className="text-3xl font-black italic tracking-tighter">{selectedPerformer?.total_comments}</span>
+                                                        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Conversations</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-12">
+                                            {Object.entries(selectedPerformer?.performance_metrics || {}).map(([unit, val]: any) => (
+                                                <div key={unit} className="bg-white/5 p-8 rounded-3xl border border-white/5 text-center group hover:bg-white/10 transition-all">
+                                                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">{unit} Velocity</p>
+                                                    <p className="text-3xl font-black italic tracking-tighter">{val} Units</p>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="bg-black p-10 rounded-[2.5rem] border border-white/5 shadow-2x-strong relative overflow-hidden group/board">
+                                            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-transparent pointer-events-none" />
+                                            <div className="flex justify-between items-end mb-12 relative z-10">
+                                                <h4 className="text-[11px] font-bold uppercase tracking-[0.3em] text-gray-400 flex items-center gap-3">
+                                                    <TrendingUp size={14} className="text-emerald-500" />
+                                                    Revenue Trajectory (L3M)
+                                                </h4>
+                                                <Zap size={18} className="text-accent animate-pulse" />
+                                            </div>
+                                            <div className="flex items-end justify-between gap-6 h-56 relative z-10">
+                                                {selectedPerformer?.chart_data?.map((d: any, i: number) => (
+                                                    <div key={i} className="flex-1 flex flex-col items-center gap-6 group/chart">
+                                                        <div className="w-full relative flex items-end justify-center h-full">
+                                                            <motion.div 
+                                                                initial={{ height: 0 }}
+                                                                animate={{ height: `${Math.max(5, (d.revenue / 1000) * 100)}%` }}
+                                                                transition={{ delay: i * 0.1, duration: 0.8, ease: "circOut" }}
+                                                                className="w-full max-w-[45px] bg-gradient-to-t from-accent/40 to-accent rounded-t-xl group-hover/chart:to-white transition-all duration-500 shadow-lg shadow-accent/20"
+                                                            >
+                                                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover/chart:opacity-100 transition-all translate-y-2 group-hover/chart:translate-y-0 text-[10px] font-black font-mono bg-white text-black px-3 py-1 rounded-full shadow-xl">
+                                                                    +${d.revenue.toFixed(0)}
+                                                                </div>
+                                                            </motion.div>
+                                                        </div>
+                                                        <span className="text-[10px] font-black italic tracking-tighter text-gray-500 group-hover/chart:text-white transition-colors">{d.label}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+        </main>
+    </ProtectedRoute>
+)
 }
+

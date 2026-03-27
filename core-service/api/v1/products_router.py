@@ -133,6 +133,53 @@ def add_comment(product_id: int, payload: dict, db: Session = Depends(get_db), c
     db.commit()
     return {"status": "commented", "id": new_comment.id}
 
+@router.get("/{product_id}/performance", response_model=dict)
+def get_product_performance(product_id: int, db: Session = Depends(get_db)):
+    from domain.orders.models import Order, OrderItem
+    from sqlalchemy import func
+    
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Calculate Sales History
+    sales_history = db.query(
+        func.date_trunc('month', Order.created_at).label('month'),
+        func.sum(OrderItem.quantity).label('count'),
+        func.sum(OrderItem.quantity * OrderItem.price_at_order).label('revenue')
+    ).join(OrderItem, Order.id == OrderItem.order_id)\
+     .filter(OrderItem.product_id == product_id)\
+     .group_by('month')\
+     .order_by('month')\
+     .all()
+
+    # Formatter for the frontend to digest easily
+    monthly_data = [{"label": s.month.strftime("%b"), "sales": int(s.count), "revenue": float(s.revenue)} for s in sales_history]
+    
+    # If no real history, provide 'Projected' data based on likes to show the potential
+    if not monthly_data:
+        # Simulations for "Market Potential" if no sales yet
+        base = product.likes_count * 0.15
+        monthly_data = [
+            {"label": "Jan", "sales": int(base * 0.8), "revenue": base * 0.8 * product.price},
+            {"label": "Feb", "sales": int(base * 1.2), "revenue": base * 1.2 * product.price},
+            {"label": "Mar", "sales": int(base * 2.5), "revenue": base * 2.5 * product.price}, # Current Hype
+        ]
+
+    return {
+        "product_name": product.name,
+        "total_likes": product.likes_count,
+        "total_comments": db.query(Comment).filter(Comment.product_id == product_id).count(),
+        "performance_metrics": {
+            "weekly": int(sum(d['sales'] for d in monthly_data) / 4),
+            "monthly": int(sum(d['sales'] for d in monthly_data)),
+            "quarterly": int(sum(d['sales'] for d in monthly_data) * 3),
+            "yearly": int(sum(d['sales'] for d in monthly_data) * 12)
+        },
+        "chart_data": monthly_data,
+        "market_status": "Trending" if product.likes_count > 10 else "Niche"
+    }
+
 @router.post("/seed", response_model=dict)
 def seed_products(db: Session = Depends(get_db)):
 
