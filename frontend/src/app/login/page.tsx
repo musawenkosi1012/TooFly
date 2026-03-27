@@ -31,7 +31,19 @@ function AuthContent() {
             <div className="relative w-full h-[100dvh] md:h-screen flex flex-col md:flex-row shadow-2xl overflow-hidden bg-black max-w-[1600px] mx-auto">
                 
                 {/* --- Form Section --- */}
-                <div className="relative w-full md:w-1/2 h-full flex items-center justify-center bg-[#0a0a0a] z-10">
+                <motion.div 
+                    animate={{ 
+                        x: isMobile ? "0%" : (isLogin ? "0%" : "100%"),
+                        y: isMobile ? (isLogin ? "0%" : "100%") : "0%"
+                    }}
+                    transition={{ 
+                        type: "spring", 
+                        stiffness: 100, 
+                        damping: 22,
+                        mass: 1.2
+                    }}
+                    className="relative w-full md:w-1/2 h-full flex items-center justify-center bg-[#0a0a0a] z-10 shadow-[0_0_100px_rgba(0,0,0,0.5)]"
+                >
                     <AnimatePresence mode="wait">
                         {isLogin ? (
                             <motion.div
@@ -57,12 +69,7 @@ function AuthContent() {
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </div>
-
-                {/* --- Right Side Static (Desktop) --- */}
-                <div className="hidden md:flex w-1/2 h-full items-center justify-center bg-[#0a0a0a]">
-                    {/* Empty placeholder for the overlay to slide over */}
-                </div>
+                </motion.div>
 
                 {/* --- Full-Screen Sliding Overlay Panel --- */}
                 <motion.div

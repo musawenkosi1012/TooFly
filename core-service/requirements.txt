@@ -11,3 +11,4 @@ passlib[bcrypt]
 python-multipart
 email-validator
 Pillow
+bcrypt
