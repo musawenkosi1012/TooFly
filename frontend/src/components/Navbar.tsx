@@ -53,7 +53,7 @@ export default function Navbar() {
     }, [pathname])
 
     const isCataloguePath = pathname === "/catalogue" || pathname.startsWith("/products/")
-    const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/success" || pathname === "/"
+    const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/success"
     const showCart = cartItems.length > 0 && isCataloguePath && !isAuthPage
 
     useEffect(() => {

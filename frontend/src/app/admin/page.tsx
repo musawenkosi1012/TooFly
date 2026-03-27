@@ -8,7 +8,8 @@ import ProductCard from "@/components/ProductCard"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { useRouter } from "next/navigation"
 
-export default function AdminPage() {
+export default function AdminDashboard() {
+    const router = useRouter()
     const [products, setProducts] = useState<Product[]>([])
     const [statsData, setStatsData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -24,8 +25,6 @@ export default function AdminPage() {
         stock: 10
     })
     
-    const router = useRouter()
-
     async function loadDashboard() {
         try {
             const token = sessionStorage.getItem("token")

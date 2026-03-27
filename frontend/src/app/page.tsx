@@ -6,14 +6,18 @@ import { ArrowRight, Zap, Shield, Globe, UserPlus, LogIn } from "lucide-react"
 import { useState, useEffect } from "react"
 
 export default function Home() {
-  const [user, setUser] = useState<{ email: string } | null>(null)
+  const [user, setUser] = useState<{ email: string; role: string } | null>(null)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     const storedUser = sessionStorage.getItem("user")
     if (storedUser) {
       setUser(JSON.parse(storedUser))
     }
   }, [])
+
+  const dashboardHref = user?.role === "owner" || user?.role === "it_admin" ? "/admin" : "/catalogue"
 
   return (
     <main className="min-h-screen overflow-hidden bg-white dark:bg-black">
@@ -39,18 +43,29 @@ export default function Home() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/register"
-                className="px-10 py-5 bg-black dark:bg-white text-white dark:text-black font-bold uppercase tracking-[0.2em] text-[10px] rounded-2xl hover:scale-105 transition-transform flex items-center justify-center gap-3 shadow-2xl shadow-indigo-500/10"
-              >
-                Sign Up <UserPlus size={14} />
-              </Link>
-              <Link
-                href="/login"
-                className="px-10 py-5 border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 font-bold uppercase tracking-[0.2em] text-[10px] rounded-2xl hover:bg-black/10 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-3"
-              >
-                Sign In <LogIn size={14} />
-              </Link>
+              {mounted && user ? (
+                  <Link
+                    href={dashboardHref}
+                    className="px-10 py-5 bg-accent text-white font-bold uppercase tracking-[0.2em] text-[10px] rounded-2xl hover:scale-105 transition-transform flex items-center justify-center gap-3 shadow-2xl shadow-accent/20"
+                  >
+                    Go to Dashboard <ArrowRight size={14} />
+                  </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/register"
+                    className="px-10 py-5 bg-black dark:bg-white text-white dark:text-black font-bold uppercase tracking-[0.2em] text-[10px] rounded-2xl hover:scale-105 transition-transform flex items-center justify-center gap-3 shadow-2xl shadow-indigo-500/10"
+                  >
+                    Sign Up <UserPlus size={14} />
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="px-10 py-5 border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 font-bold uppercase tracking-[0.2em] text-[10px] rounded-2xl hover:bg-black/10 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-3"
+                  >
+                    Sign In <LogIn size={14} />
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
 
