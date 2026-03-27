@@ -16,6 +16,8 @@ export default function AdminDashboard() {
     const [isDeploying, setIsDeploying] = useState(false) // Used for global refresh if needed, but mainly for UI
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isUploading, setIsUploading] = useState(false)
+    const [isUploadingToProduct, setIsUploadingToProduct] = useState<number | null>(null)
     const [newProduct, setNewProduct] = useState({
         name: "",
         description: "",
