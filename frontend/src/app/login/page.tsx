@@ -79,20 +79,39 @@ function AuthContent() {
                     }}
                     className="absolute top-0 left-0 w-full h-full md:w-1/2 z-20 overflow-hidden"
                 >
-                    <div className="absolute inset-0 bg-white dark:bg-zinc-100 border-y md:border-x border-white/10 shadow-[-50px_0_100px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center p-8 md:p-12 text-center text-black">
+                    <div className="absolute inset-0 bg-white shadow-[-50px_0_100px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center relative overflow-hidden">
+                        {/* Background Slide Visual */}
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={isLogin ? "right" : "left"}
+                                initial={{ opacity: 0, x: isLogin ? 100 : -100 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: isLogin ? -100 : 100 }}
+                                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                                className="absolute inset-0"
+                            >
+                                <img 
+                                    src={isLogin ? "/images/slide right.jpeg" : "/images/slide left.jpeg"}
+                                    alt="Mood"
+                                    className="w-full h-full object-cover grayscale brightness-50"
+                                />
+                                <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+                            </motion.div>
+                        </AnimatePresence>
+
                         {/* Interactive Content inside Overlay */}
                         <motion.div
                             key={isLogin ? "to-signup" : "to-signin"}
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1, duration: 0.4 }}
-                            className="space-y-8 md:space-y-12"
+                            className="space-y-8 md:space-y-12 relative z-10 text-white p-8 md:p-12 text-center"
                         >
                             <div className="space-y-4 md:space-y-6 px-4">
                                 <h2 className="text-4xl sm:text-5xl md:text-7xl font-black uppercase italic tracking-tighter leading-[0.9] mb-4 decoration-accent underline decoration-4 md:decoration-8 underline-offset-4 md:underline-offset-8 whitespace-pre-line text-center">
                                     {isLogin ? "Join the\nCollective" : "Return to\nStation"}
                                 </h2>
-                                <p className="text-[9px] md:text-[12px] font-black uppercase tracking-[0.2em] md:tracking-[0.5em] opacity-60 max-w-[220px] md:max-w-[300px] mx-auto leading-loose text-black/70">
+                                <p className="text-[9px] md:text-[12px] font-black uppercase tracking-[0.2em] md:tracking-[0.5em] opacity-80 max-w-[220px] md:max-w-[300px] mx-auto leading-loose">
                                     {isLogin 
                                         ? "Request entry into the restricted access toofly vault. Curated silhouettes await." 
                                         : "Resume your session and continue the exploration of fluid forms."}
@@ -101,7 +120,7 @@ function AuthContent() {
                             
                             <button 
                                 onClick={() => setIsLogin(!isLogin)}
-                                className="group relative flex items-center justify-center gap-4 md:gap-6 py-4 md:py-6 px-10 md:px-12 bg-black text-white rounded-none transition-all hover:scale-105 active:scale-95 border-2 border-black w-full"
+                                className="group relative flex items-center justify-center gap-4 md:gap-6 py-4 md:py-6 px-10 md:px-12 bg-white text-black rounded-none transition-all hover:scale-105 active:scale-95 border-2 border-white w-full"
                             >
                                 <span className="text-[11px] md:text-[14px] font-black uppercase tracking-[0.3em] relative z-10">
                                     {isLogin ? "Initialize Account" : "Access Identity"}

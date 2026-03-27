@@ -77,7 +77,7 @@ export default function Home() {
           >
             <div className="aspect-[4/5] rounded-[3rem] md:rounded-[4rem] overflow-hidden relative group shadow-3xl shadow-black/20">
               <img
-                src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=800"
+                src="/images/landing.jpeg"
                 alt="Featured Drop"
                 className="w-full h-full object-cover grayscale brightness-95 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000"
               />
