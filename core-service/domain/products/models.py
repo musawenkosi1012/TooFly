@@ -13,8 +13,19 @@ class Product(Base):
     stock = Column(Integer, default=0)
     likes_count = Column(Integer, default=0)
     
-    # Relationship to additional images
+    # Relationships
     images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan")
+    comments = relationship("Comment", back_populates="product", cascade="all, delete-orphan")
+
+class Comment(Base):
+    __tablename__ = "comments"
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"))
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=True) # Allow Guest comments too? No, usually linked to user.
+    content = Column(Text, nullable=False)
+    timestamp = Column(String, default=lambda: datetime.now().isoformat())
+    
+    product = relationship("Product", back_populates="comments")
 
 class ProductImage(Base):
     __tablename__ = "product_images"
@@ -23,3 +34,5 @@ class ProductImage(Base):
     url = Column(Text, nullable=False)
     
     product = relationship("Product", back_populates="images")
+
+from datetime import datetime

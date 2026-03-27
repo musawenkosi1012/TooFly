@@ -14,7 +14,7 @@ export interface Product {
     image_url: string
     likes_count: number
     images?: { id: number, url: string }[]
-    comments?: { id: number, text: string, username: string }[]
+    comments?: { id: number, content: string, timestamp: string }[]
 }
 
 interface ProductCardProps {
@@ -45,18 +45,25 @@ export default function ProductCard({ product, delay = 0 }: ProductCardProps) {
         }
 
         try {
-            const commentUrl = `${API_ROOT}/products/${product.id}/comments`
+            const commentUrl = `${API_ROOT}/products/${product.id}/comment`
             const res = await fetch(commentUrl, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 },
-                body: JSON.stringify({ text: commentText })
+                body: JSON.stringify({ content: commentText })
             })
             if (res.ok) {
                 const newComment = await res.json()
-                setLocalComments(prev => [...prev, newComment])
+                // Backend returns {status: 'commented', id: N}. 
+                // We'll optimistically add it with the current time.
+                const optimisticComment = {
+                    id: newComment.id,
+                    content: commentText,
+                    timestamp: new Date().toISOString()
+                }
+                setLocalComments(prev => [...prev, optimisticComment])
                 setCommentText("")
             } else if (res.status === 401) {
                 sessionStorage.removeItem("token")
@@ -97,8 +104,8 @@ export default function ProductCard({ product, delay = 0 }: ProductCardProps) {
             })
             if (res.ok) {
                 const data = await res.json()
-                setIsLiked(data.is_liked)
-                setLocalLikesCount(data.likes_count)
+                // Backend returns {status: 'liked', new_count: N}
+                setLocalLikesCount(data.new_count)
             } else if (res.status === 401) {
                 sessionStorage.removeItem("token")
                 window.location.href = `/register?redirect=${window.location.pathname}`
@@ -355,8 +362,10 @@ export default function ProductCard({ product, delay = 0 }: ProductCardProps) {
                                 ) : (
                                     localComments.map((comment, i) => (
                                         <div key={i} className="bg-white/5 rounded-xl p-3 border border-white/10">
-                                            <p className="text-[10px] text-accent font-bold uppercase tracking-widest mb-1">@{comment.username}</p>
-                                            <p className="text-white text-xs leading-relaxed">{comment.text}</p>
+                                            <p className="text-[10px] text-accent font-bold uppercase tracking-widest mb-1">
+                                                {new Date(comment.timestamp).toLocaleDateString()}
+                                            </p>
+                                            <p className="text-white text-xs leading-relaxed">{comment.content}</p>
                                         </div>
                                     ))
                                 )}

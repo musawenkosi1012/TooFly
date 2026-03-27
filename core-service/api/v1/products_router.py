@@ -1,14 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from db.session import get_db
-from domain.products.models import Product, ProductImage
+from domain.products.models import Product, ProductImage, Comment
 from typing import List
+from datetime import datetime
 
 router = APIRouter(prefix="/products")
 
 @router.get("/", response_model=List[dict])
 def get_products(db: Session = Depends(get_db)):
-    products = db.query(Product).options(joinedload(Product.images)).all()
+    products = db.query(Product).options(joinedload(Product.images), joinedload(Product.comments)).all()
     # Simple formatting for frontend compatibility
     return [
         {
@@ -19,6 +20,7 @@ def get_products(db: Session = Depends(get_db)):
             "category": p.category,
             "image_url": p.image_url,
             "images": [{"id": img.id, "url": img.url} for img in p.images],
+            "comments": [{"id": c.id, "content": c.content, "timestamp": c.timestamp} for c in p.comments],
             "stock": p.stock,
             "likes_count": p.likes_count
         } for p in products
@@ -67,6 +69,29 @@ def add_product_images(product_id: int, payload: dict, db: Session = Depends(get
     
     db.commit()
     return {"status": "success", "added": len(urls)}
+
+@router.post("/{product_id}/like", response_model=dict)
+def like_product(product_id: int, db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    product.likes_count += 1
+    db.commit()
+    return {"status": "liked", "new_count": product.likes_count}
+
+@router.post("/{product_id}/comment", response_model=dict)
+def add_comment(product_id: int, payload: dict, db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    new_comment = Comment(
+        product_id=product_id,
+        content=payload["content"]
+    )
+    db.add(new_comment)
+    db.commit()
+    return {"status": "commented", "id": new_comment.id}
 
 @router.post("/seed", response_model=dict)
 def seed_products(db: Session = Depends(get_db)):

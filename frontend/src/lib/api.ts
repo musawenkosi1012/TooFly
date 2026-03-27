@@ -11,8 +11,24 @@ export interface Product {
     price: number;
     category: string;
     image_url: string;
+    images?: { id: number; url: string }[];
+    comments?: { id: number; content: string; timestamp: string }[];
     stock: number;
     likes_count: number;
+}
+
+export async function likeProduct(id: number): Promise<void> {
+    const response = await fetch(`${API_V1}/products/${id}/like`, { method: "POST" });
+    if (!response.ok) throw new Error("Failed to like product");
+}
+
+export async function addComment(id: number, content: string): Promise<void> {
+    const response = await fetch(`${API_V1}/products/${id}/comment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+    });
+    if (!response.ok) throw new Error("Failed to add comment");
 }
 
 export interface User {
