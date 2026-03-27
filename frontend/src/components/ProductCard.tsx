@@ -15,6 +15,7 @@ export interface Product {
     likes_count: number
     images?: { id: number, url: string }[]
     comments?: { id: number, content: string, timestamp: string }[]
+    is_liked?: boolean
 }
 
 interface ProductCardProps {
@@ -23,7 +24,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, delay = 0 }: ProductCardProps) {
-    const [isLiked, setIsLiked] = useState(false)
+    const [isLiked, setIsLiked] = useState(product.is_liked || false)
     const [currentIndex, setCurrentIndex] = useState(0)
     const [direction, setDirection] = useState(0)
     

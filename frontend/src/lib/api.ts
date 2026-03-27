@@ -15,17 +15,28 @@ export interface Product {
     comments?: { id: number; content: string; timestamp: string }[];
     stock: number;
     likes_count: number;
+    is_liked?: boolean;
 }
 
 export async function likeProduct(id: number): Promise<void> {
-    const response = await fetch(`${API_V1}/products/${id}/like`, { method: "POST" });
+    const token = getAuthToken();
+    const response = await fetch(`${API_V1}/products/${id}/like`, { 
+        method: "POST",
+        headers: {
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        }
+    });
     if (!response.ok) throw new Error("Failed to like product");
 }
 
 export async function addComment(id: number, content: string): Promise<void> {
+    const token = getAuthToken();
     const response = await fetch(`${API_V1}/products/${id}/comment`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ content }),
     });
     if (!response.ok) throw new Error("Failed to add comment");
@@ -88,7 +99,12 @@ export function getAuthToken() {
 }
 
 export async function fetchProducts(): Promise<Product[]> {
-    const response = await fetch(`${API_V1}/products`);
+    const token = getAuthToken();
+    const response = await fetch(`${API_V1}/products`, {
+        headers: {
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        }
+    });
     if (!response.ok) throw new Error("Failed to fetch products");
     return response.json();
 }

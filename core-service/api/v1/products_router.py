@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session, joinedload
 from db.session import get_db
 from domain.products.models import Product, ProductImage, Comment, ProductLike
@@ -30,9 +30,26 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(reusabl
 router = APIRouter(prefix="/products")
 
 @router.get("/", response_model=List[dict])
-def get_products(db: Session = Depends(get_db)):
+def get_products(db: Session = Depends(get_db), authorization: Optional[str] = Header(None)):
+    current_user = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1]
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            email = payload.get("sub")
+            if email:
+                current_user = db.query(User).filter(User.email == email).first()
+        except Exception:
+            pass # Invalid token
+            
     products = db.query(Product).options(joinedload(Product.images), joinedload(Product.comments)).all()
-    # Simple formatting for frontend compatibility
+    
+    # Get all likes for this user if authenticated
+    user_likes = set()
+    if current_user:
+        likes = db.query(ProductLike.product_id).filter(ProductLike.user_id == current_user.id).all()
+        user_likes = {l[0] for l in likes}
+
     return [
         {
             "id": p.id,
@@ -44,7 +61,8 @@ def get_products(db: Session = Depends(get_db)):
             "images": [{"id": img.id, "url": img.url} for img in p.images],
             "comments": [{"id": c.id, "content": c.content, "timestamp": c.timestamp} for c in p.comments],
             "stock": p.stock,
-            "likes_count": p.likes_count
+            "likes_count": p.likes_count,
+            "is_liked": p.id in user_likes
         } for p in products
     ]
 
