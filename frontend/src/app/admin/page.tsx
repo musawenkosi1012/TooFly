@@ -218,13 +218,29 @@ export default function AdminPage() {
                         <div className="animate-reveal">
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                                 <h2 className="text-3xl font-bold uppercase italic tracking-tighter">Inventory Lab</h2>
-                                <button 
-                                    onClick={handleDeployClick}
-                                    className="flex items-center gap-2 px-6 py-3 bg-accent text-white text-[10px] font-bold uppercase tracking-widest rounded-full hover:scale-105 transition-transform shadow-lg shadow-accent/20"
-                                >
-                                    <Plus size={14} />
-                                    Add Good to Catalogue
-                                </button>
+                                <div className="flex gap-4">
+                                    <button 
+                                        onClick={async () => {
+                                            if (!confirm("CRITICAL: This will remove ALL pieces from the global stream. Proceed?")) return
+                                            try {
+                                                const res = await fetch(`${API_ROOT}/products/manage/wipe`, { method: 'DELETE' })
+                                                if (res.ok) setProducts([])
+                                            } catch (err) { console.error(err) }
+                                        }}
+                                        className="flex items-center gap-2 px-6 py-3 bg-red-500/10 text-red-500 text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-red-500 hover:text-white transition-all shadow-lg"
+                                    >
+                                        <Trash2 size={14} />
+                                        Wipe Stream
+                                    </button>
+                                    <button 
+                                        onClick={handleDeployClick}
+                                        className="flex items-center gap-2 px-6 py-3 bg-accent text-white text-[10px] font-bold uppercase tracking-widest rounded-full hover:scale-105 transition-transform shadow-lg shadow-accent/20"
+                                    >
+                                        <Plus size={14} />
+                                        Add Good to Catalogue
+                                    </button>
+                                </div>
+
                             </div>
 
                             <div className="glass rounded-[2.5rem] overflow-x-auto">

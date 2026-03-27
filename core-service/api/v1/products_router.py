@@ -37,8 +37,25 @@ def create_product(product_data: dict, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_product)
     return {"id": new_product.id, "status": "created"}
+@router.delete("/{product_id}", response_model=dict)
+def delete_product(product_id: int, db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    db.delete(product)
+    db.commit()
+    return {"status": "deleted", "id": product_id}
+
+@router.delete("/manage/wipe", response_model=dict)
+def wipe_all_products(db: Session = Depends(get_db)):
+    # CAUTION: This removes all products. Use sparingly.
+    count = db.query(Product).delete()
+    db.commit()
+    return {"status": "wiped", "count": count}
+
 @router.post("/seed", response_model=dict)
 def seed_products(db: Session = Depends(get_db)):
+
     # Check if products already exist
     if db.query(Product).first():
         return {"status": "already seeded"}
