@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Package, TrendingUp, Activity, Plus, Trash2, Loader2, Search, X, ImagePlus } from "lucide-react"
+import { Package, TrendingUp, Activity, Plus, Trash2, Loader2, Search, X, ImagePlus, Clock, User as UserIcon } from "lucide-react"
 import { fetchProducts, createProduct, Product, API_ROOT, API_V1 } from "@/lib/api"
 import ProductCard from "@/components/ProductCard"
 import ProtectedRoute from "@/components/ProtectedRoute"
@@ -224,8 +224,47 @@ export default function AdminDashboard() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-12">
-                        <div className="animate-reveal">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-12 mb-16">
+                        {/* Highlights & Recent Feed */}
+                        <div className="lg:col-span-1 flex flex-col gap-8">
+                            <div className="glass p-8 rounded-[2.5rem]">
+                                <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 mb-6 flex items-center gap-2">
+                                    <Clock size={12} className="text-accent" />
+                                    Recent Activity
+                                </h3>
+                                <div className="space-y-6">
+                                    {statsData?.recent_sales?.length > 0 ? (
+                                        statsData.recent_sales.map((sale: any) => (
+                                            <div key={sale.id} className="flex flex-col gap-1 animate-reveal">
+                                                <div className="flex justify-between items-center text-[11px] font-black uppercase italic tracking-tighter">
+                                                    <span className="text-gray-400 group-hover:text-white transition-colors">{sale.user.split('@')[0]}</span>
+                                                    <span className="text-accent">+${sale.amount}</span>
+                                                </div>
+                                                <div className="h-[1px] w-full bg-black/5 dark:bg-white/5" />
+                                                <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">{sale.time} • SECURE PAYMENT</span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="py-8 text-center">
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Waiting for first drop...</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="glass p-8 rounded-[2.5rem] bg-accent/5 border border-accent/10">
+                                <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent mb-4">Pro-Tip</h3>
+                                <p className="text-xs text-gray-400 leading-relaxed font-medium"> 
+                                    Optimize your drops by monitoring the 
+                                    <span className="text-white"> Conversion Rate </span> 
+                                    in real-time. Aim for <span className="text-emerald-500">15%+</span> for high-demand street pieces.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Main Grid */}
+                        <div className="lg:col-span-3">
+                            <div className="animate-reveal">
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                                 <h2 className="text-3xl font-bold uppercase italic tracking-tighter">Inventory Lab</h2>
                                 <div className="flex gap-4">
