@@ -156,6 +156,7 @@ export default function Navbar() {
     const navLinks = [
         { name: "Home", href: "/" },
         { name: "Catalogue", href: "/catalogue" },
+        { name: "Design Lab", href: "/design-lab" },
         { name: "About", href: "/about" },
         { name: "Admin Portal", href: "/admin" },
         { name: "System Monitor", href: "/monitor" },

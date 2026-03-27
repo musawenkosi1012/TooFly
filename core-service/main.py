@@ -9,6 +9,7 @@ from api.v1.products_router import router as products_router
 from api.v1.internal_router import router as internal_router
 from api.v1.auth_router import router as auth_router
 from api.v1.upload_router import router as upload_router
+from api.v1.designs_router import router as designs_router
 from core.config import settings
 from db.session import engine
 from db.base import Base 
@@ -86,11 +87,13 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 app.include_router(auth_router, prefix="/api")
 app.include_router(products_router, prefix="/api")
 app.include_router(upload_router, prefix="/api")
+app.include_router(designs_router, prefix="/api")
 
 # V1 Prefix mappings
 app.include_router(orders_router, prefix=settings.API_V1_STR)
 app.include_router(products_router, prefix=settings.API_V1_STR)
 app.include_router(internal_router, prefix=settings.API_V1_STR)
+app.include_router(designs_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def read_root():
