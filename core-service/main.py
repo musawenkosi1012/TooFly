@@ -78,14 +78,20 @@ app.add_middleware(DynamicCORSMiddleware)
 # Static Files (for images) - Use /tmp for writable storage on Read-only FS
 app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
 
-# Core Routers
-# Direct /api prefix mappings (Frontend compatibility)
+# 1. API Direct Prefix (Frontend /api/...)
 app.include_router(auth_router, prefix="/api")
 app.include_router(products_router, prefix="/api")
 app.include_router(upload_router, prefix="/api")
 app.include_router(designs_router, prefix="/api")
+app.include_router(orders_router, prefix="/api")
 
-# V1 Prefix mappings
+# 2. V1 Direct Prefix (Cleaner /v1/...)
+app.include_router(auth_router, prefix="/v1")
+app.include_router(products_router, prefix="/v1")
+app.include_router(orders_router, prefix="/v1")
+app.include_router(designs_router, prefix="/v1")
+
+# 3. Standard Versioned Prefix (/api/v1/...)
 app.include_router(orders_router, prefix=settings.API_V1_STR)
 app.include_router(products_router, prefix=settings.API_V1_STR)
 app.include_router(internal_router, prefix=settings.API_V1_STR)

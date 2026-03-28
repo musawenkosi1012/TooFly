@@ -6,7 +6,7 @@ import { ShoppingBag, User, Menu, X, Crown, Search, Trash, Sun, Moon, Palette } 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
-import { logout } from "@/lib/api"
+import { logout, API_V1 } from "@/lib/api"
 
 import { useRouter } from "next/navigation"
 
@@ -113,8 +113,7 @@ export default function Navbar() {
         setIsCheckingOut(true)
 
         try {
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
-            const checkoutUrl = `${baseUrl}/v1/orders/checkout`
+            const checkoutUrl = `${API_V1}/orders/checkout`
             
             // Calculate total for backend validation
             const total = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
@@ -151,7 +150,7 @@ export default function Navbar() {
                     const orderId = paynowData.order_id
                     const pollInterval = setInterval(async () => {
                         try {
-                            const statusRes = await fetch(`${baseUrl}/v1/orders/status/${orderId}`, {
+                            const statusRes = await fetch(`${API_V1}/orders/status/${orderId}`, {
                                 method: "POST"
                             })
                             const status = await statusRes.json()
