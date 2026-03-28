@@ -1,4 +1,5 @@
 // Resilient API URL resolution: ensures we always have a clean /api root regardless of whether /v1 is appended in env
+// In production, defaulting to empty string makes fetches relative to the current origin
 const rawUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace(/\/$/, "");
 export const API_ROOT = rawUrl.replace(/\/v1(\/|$)/, "$1").replace(/\/$/, ""); // Strip /v1 if present to get auth base
 export const API_V1 = API_ROOT.endsWith("/v1") ? API_ROOT : `${API_ROOT}/v1`; // Ported from products endpoint

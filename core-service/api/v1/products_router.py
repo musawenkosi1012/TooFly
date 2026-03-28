@@ -4,14 +4,36 @@ from db.session import get_db
 from domain.products.models import Product, ProductImage, Comment, ProductLike
 from domain.users.models import User
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from core.config import settings
 from jose import jwt
 from fastapi.security import OAuth2PasswordBearer
+import time
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login"
 )
+
+# In-memory cache for global product list
+class ProductCache:
+    _data = None
+    _expiry = 0
+    TTL = 60 # Seconds
+
+    @classmethod
+    def get(cls):
+        if cls._data and time.time() < cls._expiry:
+            return cls._data
+        return None
+
+    @classmethod
+    def set(cls, data):
+        cls._data = data
+        cls._expiry = time.time() + cls.TTL
+
+    @classmethod
+    def invalidate(cls):
+        cls._data = None
 
 def get_current_user(db: Session = Depends(get_db), token: str = Depends(reusable_oauth2)):
     try:
@@ -42,28 +64,37 @@ def get_products(db: Session = Depends(get_db), authorization: Optional[str] = H
         except Exception:
             pass # Invalid token
             
-    products = db.query(Product).options(joinedload(Product.images), joinedload(Product.comments)).all()
+    # Attempt to get from cache
+    cached_products = ProductCache.get()
+    if cached_products:
+        products_data = cached_products
+    else:
+        products = db.query(Product).options(joinedload(Product.images), joinedload(Product.comments)).all()
+        products_data = [
+            {
+                "id": p.id,
+                "name": p.name,
+                "description": p.description,
+                "price": p.price,
+                "category": p.category,
+                "image_url": p.image_url,
+                "images": [{"id": img.id, "url": img.url} for img in p.images],
+                "comments": [{"id": c.id, "content": c.content, "timestamp": c.timestamp} for c in p.comments],
+                "stock": p.stock,
+                "likes_count": p.likes_count
+            } for p in products
+        ]
+        ProductCache.set(products_data)
     
-    # Get all likes for this user if authenticated
+    # Inject user-specific like status (cannot be cached globally)
     user_likes = set()
     if current_user:
         likes = db.query(ProductLike.product_id).filter(ProductLike.user_id == current_user.id).all()
         user_likes = {l[0] for l in likes}
 
+    # Deep copy/map to inject is_liked
     return [
-        {
-            "id": p.id,
-            "name": p.name,
-            "description": p.description,
-            "price": p.price,
-            "category": p.category,
-            "image_url": p.image_url,
-            "images": [{"id": img.id, "url": img.url} for img in p.images],
-            "comments": [{"id": c.id, "content": c.content, "timestamp": c.timestamp} for c in p.comments],
-            "stock": p.stock,
-            "likes_count": p.likes_count,
-            "is_liked": p.id in user_likes
-        } for p in products
+        {**p, "is_liked": p["id"] in user_likes} for p in products_data
     ]
 
 @router.post("/", response_model=dict)
@@ -79,6 +110,7 @@ def create_product(product_data: dict, db: Session = Depends(get_db)):
     db.add(new_product)
     db.commit()
     db.refresh(new_product)
+    ProductCache.invalidate()
     return {"id": new_product.id, "status": "created"}
 @router.delete("/{product_id}", response_model=dict)
 def delete_product(product_id: int, db: Session = Depends(get_db)):

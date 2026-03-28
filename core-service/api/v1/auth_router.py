@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
@@ -13,6 +13,7 @@ from domain.orders.models import Order
 from core.config import settings
 from jose import jwt
 import bcrypt
+from core.security import RoleChecker, auth_limiter, log_security_event
 
 router = APIRouter()
 def verify_password(plain_password: str, hashed_password: str):
@@ -59,18 +60,29 @@ async def register(user_in: UserRegister, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    log_security_event("REGISTER", new_user.email, "INTERNAL", "User registered successfully")
     return {
         "email": new_user.email,
         "role": new_user.role
     }
 
 @router.post("/login")
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    # 1. Rate Limiting for Auth
+    client_ip = request.client.host if request.client else "unknown"
+    if not auth_limiter.is_allowed(client_ip):
+        log_security_event("BRUTE_FORCE_ATTEMPT", form_data.username, client_ip, "Login rate limit exceeded")
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many login attempts. Please try again later."
+        )
+
     # Standard check: Find user by email
     user = db.query(User).filter(User.email == form_data.username).first()
     
     # Verify user exists
     if not user:
+        log_security_event("LOGIN_FAILED", form_data.username, client_ip, "User not found")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -86,6 +98,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         password_ok = False
 
     if not password_ok:
+        log_security_event("LOGIN_FAILED", form_data.username, client_ip, "Invalid password")
         print(f"WARNING: Login attempt failed for {form_data.username}. Authentication denied.")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -98,6 +111,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
+    
+    log_security_event("LOGIN_SUCCESS", user.email, client_ip, f"User logged in as {user.role}")
     
     return {
         "access_token": access_token,
@@ -115,8 +130,8 @@ async def health_check():
 
 # Compatibility Aliases for older/cached frontend requests
 @router.post("/v1/login")
-async def login_compat(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    return await login(form_data, db)
+async def login_compat(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    return await login(request, form_data, db)
 
 @router.post("/v1/register")
 async def register_compat(user_in: UserRegister, db: Session = Depends(get_db)):
@@ -124,7 +139,7 @@ async def register_compat(user_in: UserRegister, db: Session = Depends(get_db)):
 
 from domain.orders.models import Order
 
-@router.get("/owner/dashboard")
+@router.get("/owner/dashboard", dependencies=[Depends(RoleChecker(["owner"]))])
 async def owner_dashboard(db: Session = Depends(get_db)):
     # Calculate real engagement metrics
     total_likes = db.query(func.sum(Product.likes_count)).scalar() or 0
@@ -160,8 +175,8 @@ async def owner_dashboard(db: Session = Depends(get_db)):
     }
 
 # Catch double /api/api or /api/v1 calls if frontend is misconfigured
-@router.get("/api/owner/dashboard")
-@router.get("/v1/owner/dashboard")
+@router.get("/api/owner/dashboard", dependencies=[Depends(RoleChecker(["owner"]))])
+@router.get("/v1/owner/dashboard", dependencies=[Depends(RoleChecker(["owner"]))])
 async def owner_dashboard_compat(db: Session = Depends(get_db)):
     return await owner_dashboard(db)
 
