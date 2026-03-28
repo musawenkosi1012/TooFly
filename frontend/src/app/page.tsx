@@ -81,17 +81,6 @@ export default function Home() {
                 alt="Featured Drop"
                 className="w-full h-full object-cover grayscale brightness-95 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000"
               />
-              <div className="absolute inset-x-6 bottom-6 p-6 md:p-8 glass rounded-[2rem] md:rounded-[2.5rem] backdrop-blur-2xl">
-                <div className="flex justify-between items-end">
-                  <div>
-                    <h3 className="text-2xl md:text-3xl font-bold uppercase italic tracking-tighter mb-1">Void Shell V1</h3>
-                    <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-accent">Limited Drop / 50 Pcs</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xl md:text-2xl font-bold tracking-tighter">$499.00</p>
-                  </div>
-                </div>
-              </div>
             </div>
           </motion.div>
         </div>
