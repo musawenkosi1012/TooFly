@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ShoppingBag, User, Menu, X, Crown, Search, Trash } from "lucide-react"
+import { ShoppingBag, User, Menu, X, Crown, Search, Trash, Sun, Moon } from "lucide-react"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
@@ -18,6 +18,7 @@ export default function Navbar() {
     const [user, setUser] = useState<{ email: string; role: string } | null>(null)
     const pathname = usePathname()
     const router = useRouter()
+    const [theme, setTheme] = useState<'light' | 'dark'>('dark')
 
     useEffect(() => {
         const handleScroll = () => {
@@ -46,11 +47,29 @@ export default function Navbar() {
         loadCart()
         window.addEventListener('cartUpdated', handleCartUpdate)
 
+        // Initialize theme
+        const savedTheme = localStorage.getItem("theme") as 'light' | 'dark'
+        if (savedTheme) {
+            setTheme(savedTheme)
+            if (savedTheme === 'dark') document.documentElement.classList.add('dark')
+            else document.documentElement.classList.remove('dark')
+        } else {
+            document.documentElement.classList.add('dark')
+        }
+
         return () => {
             window.removeEventListener("scroll", handleScroll)
             window.removeEventListener('cartUpdated', handleCartUpdate)
         }
     }, [pathname])
+
+    const toggleTheme = () => {
+        const newTheme = theme === 'light' ? 'dark' : 'light'
+        setTheme(newTheme)
+        localStorage.setItem("theme", newTheme)
+        if (newTheme === 'dark') document.documentElement.classList.add('dark')
+        else document.documentElement.classList.remove('dark')
+    }
 
     const isCataloguePath = pathname === "/catalogue" || pathname.startsWith("/products/")
     const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/success"
@@ -203,6 +222,12 @@ export default function Navbar() {
                 <div className="flex items-center gap-4">
                     <button className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors">
                         <Search size={20} />
+                    </button>
+                    <button 
+                        onClick={toggleTheme}
+                        className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-accent"
+                    >
+                        {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
                     </button>
                     <button className="md:hidden p-2" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
                         {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
