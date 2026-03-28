@@ -38,9 +38,19 @@ export default function Home() {
             <h1 className="text-5xl sm:text-7xl lg:text-[8rem] xl:text-[10rem] font-bold uppercase italic tracking-tighter leading-[0.8] mb-10 text-gradient">
               ATMOSPHERE <br /> PERMANENCE
             </h1>
-            <p className="text-[11px] md:text-[13px] font-bold uppercase tracking-[0.1em] text-gray-400 max-w-sm mb-12 leading-relaxed opacity-70">
-              Experience the evolution of streetwear. Fluid silhouettes meets digital permanence in our latest curated collection.
-            </p>
+            <div className="space-y-8 mb-12 animate-reveal">
+              <p className="text-[11px] md:text-[13px] font-bold uppercase tracking-[0.1em] text-gray-400 max-w-sm leading-relaxed opacity-70">
+                Every TOO-FY piece is engineered for both comfort and expression.
+              </p>
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase italic tracking-[0.2em] text-accent">Premium fabrics.</p>
+                <p className="text-[10px] font-black uppercase italic tracking-[0.2em] text-accent">Precision cuts.</p>
+                <p className="text-[10px] font-black uppercase italic tracking-[0.2em] text-accent">Designed to carry your creativity.</p>
+              </div>
+              <p className="text-[11px] md:text-[13px] font-bold uppercase tracking-[0.1em] text-gray-400 max-w-sm leading-relaxed opacity-70">
+                From minimal statements to bold graphics, every shirt becomes a reflection of its creator.
+              </p>
+            </div>
             
             <div className="flex flex-col sm:flex-row gap-4">
               {mounted && user ? (
