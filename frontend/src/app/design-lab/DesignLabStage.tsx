@@ -39,7 +39,7 @@ interface DesignElement {
 
 // --- Image Component ---
 const URLImage = ({ element, isSelected, onSelect, onChange }: any) => {
-  const [img] = useImage(element.src, 'Anonymous')
+  const [img] = useImage(element.src, 'anonymous')
   const shapeRef = useRef<any>(null)
   const trRef = useRef<any>(null)
 
