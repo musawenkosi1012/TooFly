@@ -159,7 +159,7 @@ function AuthContent() {
                                 )}
                             >
                                 <span className="text-[11px] md:text-[14px] font-black uppercase tracking-[0.3em] relative z-10">
-                                    {isLogin ? "Initialize Account" : "Access Identity"}
+                                    {isLogin ? "Create an Account" : "Login"}
                                 </span>
                                 <div className="relative z-10">
                                     {isLogin ? (
