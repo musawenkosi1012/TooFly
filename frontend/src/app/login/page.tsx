@@ -111,7 +111,15 @@ function AuthContent() {
                                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                                 className="absolute inset-0"
                             >
-                                {!isLogin ? (
+                                {isLogin ? (
+                                    <div className="absolute inset-0 bg-[#f5f5f5]">
+                                        <img 
+                                            src="/images/slide right.jpeg"
+                                            alt="Mood"
+                                            className="w-full h-full object-cover grayscale brightness-[1.5] opacity-20 mix-blend-multiply"
+                                        />
+                                    </div>
+                                ) : (
                                     <div className="absolute inset-0">
                                         <img 
                                             src="/images/slide left.jpeg"
@@ -120,8 +128,6 @@ function AuthContent() {
                                         />
                                         <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
                                     </div>
-                                ) : (
-                                    <div className="absolute inset-0 bg-[#f5f5f5]" />
                                 )}
                             </motion.div>
                         </AnimatePresence>
