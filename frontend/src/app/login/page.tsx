@@ -93,13 +93,13 @@ function AuthContent() {
                         mass: 1.2
                     }}
                     className={cn(
-                        "w-full h-full md:h-screen md:w-1/2 z-20 overflow-hidden",
-                        isMobile ? "relative order-first h-auto py-12" : "absolute top-0 left-0"
+                        "w-full md:h-screen md:w-1/2 z-20 overflow-hidden",
+                        isMobile ? "relative order-first h-[100dvh] py-12" : "absolute top-0 left-0 h-full"
                     )}
                 >
                     <div className={cn(
-                        "absolute inset-0 bg-white shadow-[-50px_0_100px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center relative overflow-hidden",
-                        isMobile ? "min-h-[300px]" : ""
+                        "absolute inset-0 bg-white shadow-[-50px_0_100px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center overflow-hidden",
+                        isMobile ? "min-h-[100dvh]" : ""
                     )}>
                         {/* Background Slide Visual */}
                         <AnimatePresence mode="wait">
