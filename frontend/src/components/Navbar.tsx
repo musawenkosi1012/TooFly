@@ -113,9 +113,12 @@ export default function Navbar() {
         setIsCheckingOut(true)
 
         try {
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/api"
-            const checkoutUrl = baseUrl.endsWith("/api") ? baseUrl.replace("/api", "") + "/api/checkout" : `${baseUrl}/api/checkout`
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
+            const checkoutUrl = `${baseUrl}/v1/orders/checkout`
             
+            // Calculate total for backend validation
+            const total = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
+
             const checkoutRes = await fetch(checkoutUrl, {
                 method: "POST",
                 headers: {
@@ -123,7 +126,12 @@ export default function Navbar() {
                     "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify({ 
-                    items: cartItems.map(item => ({ id: item.id, quantity: item.quantity })),
+                    total: total,
+                    items: cartItems.map(item => ({ 
+                        product_id: item.id, 
+                        quantity: item.quantity,
+                        price: item.price
+                    })),
                     phone: phone,
                     method: paymentMethod,
                     location: location,
@@ -137,22 +145,23 @@ export default function Navbar() {
             if (checkoutRes.ok) {
                 if (paynowData.redirect_url) {
                     // Standard Web Payment: Redirect
-                    sessionStorage.setItem("paynow_poll_url", paynowData.poll_url)
                     window.location.href = paynowData.redirect_url
-                } else if (paynowData.poll_url) {
+                } else if (paynowData.poll_url || paynowData.order_id) {
                     // Direct Mobile: Start Polling from Navbar
+                    const orderId = paynowData.order_id
                     const pollInterval = setInterval(async () => {
                         try {
-                            const statusRes = await fetch(`${baseUrl}/paynow/status`, {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ poll_url: paynowData.poll_url })
+                            const statusRes = await fetch(`${baseUrl}/v1/orders/status/${orderId}`, {
+                                method: "POST"
                             })
                             const status = await statusRes.json()
-                            if (status.status === 'Paid') {
+                            if (status.paid || status.status === 'paid' || status.status === 'Paid') {
                                 clearInterval(pollInterval)
                                 window.location.href = "/success"
-                            } else if (status.status === 'Cancelled' || status.status === 'Refused') {
+                                // Clear cart on success
+                                setCartItems([])
+                                sessionStorage.setItem("cart", "[]")
+                            } else if (status.status === 'Cancelled' || status.status === 'Refused' || status.status === 'failed') {
                                 clearInterval(pollInterval)
                                 alert("Payment was rejected or cancelled.")
                                 setIsCheckingOut(false)

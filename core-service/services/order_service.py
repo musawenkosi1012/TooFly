@@ -40,6 +40,7 @@ class OrderService:
                 "success": True, 
                 "order_id": order.id, 
                 "redirect_url": payment_res.get("redirect_url"),
+                "poll_url": payment_res.get("poll_url"),
                 "instructions": payment_res.get("instructions")
             }
         
