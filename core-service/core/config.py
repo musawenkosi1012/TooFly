@@ -1,3 +1,4 @@
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import ClassVar
 
@@ -23,10 +24,21 @@ class Settings(BaseSettings):
     PAYMENT_SERVICE_URL: str = "http://localhost:8002"
     INTERNAL_API_KEY: str = "UNSET_INTERNAL_KEY"
     
-    # Storage Paths
-    STATIC_DIR: str = "/tmp/static"
-    PRODUCTION_DIR: str = "/tmp/static/production"
-    PREVIEW_DIR: str = "/tmp/static/previews"
+    # Storage Paths (Dynamic)
+    @property
+    def STATIC_DIR(self) -> str:
+        # Check if running on Vercel
+        if os.getenv("VERCEL") or os.getenv("VERCEL_ENV"):
+            return "/tmp/static"
+        return os.path.join(os.getcwd(), "static")
+
+    @property
+    def PRODUCTION_DIR(self) -> str:
+        return os.path.join(self.STATIC_DIR, "production")
+
+    @property
+    def PREVIEW_DIR(self) -> str:
+        return os.path.join(self.STATIC_DIR, "previews")
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
