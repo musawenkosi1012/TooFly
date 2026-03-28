@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ShoppingBag, User, Menu, X, Crown, Search, Trash, Sun, Moon } from "lucide-react"
+import { ShoppingBag, User, Menu, X, Crown, Search, Trash, Sun, Moon, Palette } from "lucide-react"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
@@ -18,7 +18,7 @@ export default function Navbar() {
     const [user, setUser] = useState<{ email: string; role: string } | null>(null)
     const pathname = usePathname()
     const router = useRouter()
-    const [theme, setTheme] = useState<'light' | 'dark'>('dark')
+    const [theme, setTheme] = useState<'light' | 'dark' | 'grey'>('dark')
 
     useEffect(() => {
         const handleScroll = () => {
@@ -48,11 +48,11 @@ export default function Navbar() {
         window.addEventListener('cartUpdated', handleCartUpdate)
 
         // Initialize theme
-        const savedTheme = localStorage.getItem("theme") as 'light' | 'dark'
+        const savedTheme = localStorage.getItem("theme") as 'light' | 'dark' | 'grey'
         if (savedTheme) {
             setTheme(savedTheme)
-            if (savedTheme === 'dark') document.documentElement.classList.add('dark')
-            else document.documentElement.classList.remove('dark')
+            document.documentElement.classList.remove('dark', 'grey')
+            if (savedTheme !== 'light') document.documentElement.classList.add(savedTheme)
         } else {
             document.documentElement.classList.add('dark')
         }
@@ -64,11 +64,15 @@ export default function Navbar() {
     }, [pathname])
 
     const toggleTheme = () => {
-        const newTheme = theme === 'light' ? 'dark' : 'light'
+        let newTheme: 'light' | 'dark' | 'grey'
+        if (theme === 'light') newTheme = 'grey'
+        else if (theme === 'grey') newTheme = 'dark'
+        else newTheme = 'light'
+
         setTheme(newTheme)
         localStorage.setItem("theme", newTheme)
-        if (newTheme === 'dark') document.documentElement.classList.add('dark')
-        else document.documentElement.classList.remove('dark')
+        document.documentElement.classList.remove('dark', 'grey')
+        if (newTheme !== 'light') document.documentElement.classList.add(newTheme)
     }
 
     const isCataloguePath = pathname === "/catalogue" || pathname.startsWith("/products/")
@@ -227,7 +231,7 @@ export default function Navbar() {
                         onClick={toggleTheme}
                         className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-accent"
                     >
-                        {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+                        {theme === 'light' ? <Sun size={20} /> : theme === 'grey' ? <Palette size={20} /> : <Moon size={20} />}
                     </button>
                     <button className="md:hidden p-2" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
                         {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
