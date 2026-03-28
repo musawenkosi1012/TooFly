@@ -76,10 +76,7 @@ app.add_middleware(DynamicCORSMiddleware)
 
 
 # Static Files (for images) - Use /tmp for writable storage on Read-only FS
-static_dir = "/tmp/static"
-uploads_dir = "/tmp/static/uploads"
-os.makedirs(uploads_dir, exist_ok=True)
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
 
 # Core Routers
 # Direct /api prefix mappings (Frontend compatibility)

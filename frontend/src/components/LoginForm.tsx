@@ -5,7 +5,7 @@ import { Loader2, Mail, Lock, ArrowRight } from "lucide-react"
 import { login, API_ROOT } from "@/lib/api"
 import { useRouter, useSearchParams } from "next/navigation"
 
-export default function LoginForm() {
+export default function LoginForm({ onToggle }: { onToggle?: () => void }) {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [isLoading, setIsLoading] = useState(false)
@@ -84,6 +84,16 @@ export default function LoginForm() {
                     {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Sign In Now"}
                     {!isLoading && <ArrowRight size={16} />}
                 </button>
+
+                {onToggle && (
+                    <button 
+                        type="button"
+                        onClick={onToggle}
+                        className="w-full text-center py-4 text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 hover:text-accent transition-colors md:hidden"
+                    >
+                        New to the vault? <span className="text-accent underline underline-offset-4">Create Account</span>
+                    </button>
+                )}
             </form>
         </div>
     )

@@ -40,8 +40,8 @@ interface DesignElement {
 // --- Image Component ---
 const URLImage = ({ element, isSelected, onSelect, onChange }: any) => {
   const [img] = useImage(element.src, 'Anonymous')
-  const shapeRef = useRef<any>()
-  const trRef = useRef<any>()
+  const shapeRef = useRef<any>(null)
+  const trRef = useRef<any>(null)
 
   useEffect(() => {
     if (isSelected) {
@@ -59,7 +59,7 @@ const URLImage = ({ element, isSelected, onSelect, onChange }: any) => {
         draggable
         onClick={onSelect}
         onTap={onSelect}
-        onDragEnd={(e) => {
+        onDragEnd={(e: any) => {
           onChange({
             ...element,
             x: e.target.x(),
@@ -78,15 +78,15 @@ const URLImage = ({ element, isSelected, onSelect, onChange }: any) => {
           })
         }}
       />
-      {isSelected && <Transformer ref={trRef} boundBoxFunc={(oldBox, newBox) => newBox} />}
+      {isSelected && <Transformer ref={trRef} boundBoxFunc={(oldBox: any, newBox: any) => newBox} />}
     </>
   )
 }
 
 // --- Text Component ---
 const EditableText = ({ element, isSelected, onSelect, onChange }: any) => {
-  const shapeRef = useRef<any>()
-  const trRef = useRef<any>()
+  const shapeRef = useRef<any>(null)
+  const trRef = useRef<any>(null)
 
   useEffect(() => {
     if (isSelected) {
@@ -103,7 +103,7 @@ const EditableText = ({ element, isSelected, onSelect, onChange }: any) => {
         draggable
         onClick={onSelect}
         onTap={onSelect}
-        onDragEnd={(e) => {
+        onDragEnd={(e: any) => {
           onChange({
             ...element,
             x: e.target.x(),
@@ -135,8 +135,10 @@ export default function DesignLabStage() {
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle")
+  const [currentDesignId, setCurrentDesignId] = useState<number | null>(null)
+  const [finalOutputUrl, setFinalOutputUrl] = useState<string | null>(null)
 
-  const stageRef = useRef<any>()
+  const stageRef = useRef<any>(null)
 
   // --- Actions ---
   const addToHistory = (newElements: DesignElement[]) => {
@@ -220,6 +222,31 @@ export default function DesignLabStage() {
     }
   }
 
+  // --- Production Polling ---
+  useEffect(() => {
+    let interval: any
+    if (currentDesignId && !finalOutputUrl) {
+        interval = setInterval(async () => {
+            try {
+                const token = getAuthToken()
+                const res = await fetch(`${API_V1}/designs/${currentDesignId}`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                })
+                if (res.ok) {
+                    const data = await res.json()
+                    if (data.final_output_url) {
+                        setFinalOutputUrl(data.final_output_url)
+                        clearInterval(interval)
+                    }
+                }
+            } catch (err) {
+                console.error("Polling error:", err)
+            }
+        }, 5000)
+    }
+    return () => clearInterval(interval)
+  }, [currentDesignId, finalOutputUrl])
+
   const saveDesign = async () => {
     setIsSaving(true)
     const token = getAuthToken()
@@ -245,6 +272,8 @@ export default function DesignLabStage() {
         })
 
         if (res.ok) {
+            const data = await res.json()
+            setCurrentDesignId(data.id)
             setSaveStatus("success")
             setTimeout(() => setSaveStatus("idle"), 3000)
         } else {
@@ -388,6 +417,20 @@ export default function DesignLabStage() {
                     <Download size={14} className="text-accent" /> Production Engine
                 </h4>
                 <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-500 leading-relaxed">System renders at <span className="text-accent">300 DPI</span> for professional production output.</p>
+                
+                {finalOutputUrl && (
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="mt-6 pt-6 border-t border-white/5">
+                        <a 
+                            href={finalOutputUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="w-full py-4 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center gap-3 transition-all text-accent group"
+                        >
+                            <Download size={16} className="group-hover:translate-y-0.5 transition-transform" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-white">Download Render</span>
+                        </a>
+                    </motion.div>
+                )}
             </div>
         </div>
       </div>

@@ -98,7 +98,7 @@ export default function Home() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-40 px-6 border-t border-black/5 dark:border-white/5">
+      <section className="py-40 px-6 border-t border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/[0.02]">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center lg:text-left">
             {[
@@ -122,6 +122,41 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Design Lab CTA */}
+      <section className="py-40 px-6 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/20 rounded-full blur-[120px] -z-10" />
+        <div className="max-w-5xl mx-auto text-center space-y-12">
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }} 
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="space-y-6"
+            >
+                <span className="text-accent font-bold uppercase tracking-[0.4em] text-[10px]">Creative Suite</span>
+                <h2 className="text-5xl md:text-8xl font-bold uppercase italic tracking-tighter leading-none text-gradient">
+                    Architecture <br /> of Thought
+                </h2>
+                <p className="text-[11px] md:text-[13px] font-bold uppercase tracking-[0.2em] text-gray-500 max-w-xl mx-auto leading-relaxed">
+                    Access our proprietary design engine. Create custom silhouettes and render them at <span className="text-accent">300 DPI</span> for immediate production synchronization.
+                </p>
+            </motion.div>
+
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+            >
+                <Link 
+                    href="/design-lab" 
+                    className="inline-flex items-center justify-center px-12 py-6 bg-black dark:bg-white text-white dark:text-black font-black uppercase tracking-[0.4em] text-[11px] rounded-[2rem] hover:scale-105 active:scale-95 transition-all shadow-3xl shadow-accent/10 group"
+                >
+                    Initialize Lab <ArrowRight size={16} className="ml-4 group-hover:translate-x-2 transition-transform" />
+                </Link>
+            </motion.div>
         </div>
       </section>
     </main>

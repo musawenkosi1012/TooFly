@@ -5,7 +5,7 @@ import { Loader2, Mail, Lock, UserPlus } from "lucide-react"
 import { register } from "@/lib/api"
 import { useRouter, useSearchParams } from "next/navigation"
 
-export default function RegisterForm() {
+export default function RegisterForm({ onToggle }: { onToggle?: () => void }) {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
@@ -101,6 +101,16 @@ export default function RegisterForm() {
                     {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Sign Up Now"}
                     {!isLoading && <UserPlus size={16} />}
                 </button>
+
+                {onToggle && (
+                    <button 
+                        type="button"
+                        onClick={onToggle}
+                        className="w-full text-center py-4 text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 hover:text-accent transition-colors md:hidden"
+                    >
+                        Already registered? <span className="text-accent underline underline-offset-4">Sign In</span>
+                    </button>
+                )}
             </form>
         </div>
     )

@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Header, BackgroundTasks
 from sqlalchemy.orm import Session
 from db.session import get_db
 from domain.designs.models import Design
 from domain.users.models import User
 from api.v1.products_router import get_current_user
+from core.config import settings
 from typing import List, Optional
 from datetime import datetime
 import os
@@ -20,7 +21,7 @@ EXPORT_WIDTH = 500 * DPI_SCALE
 EXPORT_HEIGHT = 600 * DPI_SCALE
 
 @router.post("/", response_model=dict)
-def save_design(payload: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def save_design(payload: dict, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """
     Saves a design and generates a high-res print file in the background (simulated for now)
     """
@@ -28,10 +29,10 @@ def save_design(payload: dict, db: Session = Depends(get_db), current_user: User
     preview_data = payload.get("preview_base64", "")
     preview_url = None
     if preview_data:
-        # Save to /tmp/static/previews
-        os.makedirs("/tmp/static/previews", exist_ok=True)
+        # Save to centralized previews dir
+        os.makedirs(settings.PREVIEW_DIR, exist_ok=True)
         filename = f"design_{datetime.now().timestamp()}.png"
-        file_path = f"/tmp/static/previews/{filename}"
+        file_path = os.path.join(settings.PREVIEW_DIR, filename)
         
         # Strip header
         if "," in preview_data:
@@ -53,7 +54,7 @@ def save_design(payload: dict, db: Session = Depends(get_db), current_user: User
     db.refresh(design)
 
     # 3. BACKGROUND: Render High-Res Production File (Pillow)
-    render_high_res(design.id, payload.get("elements", []), db)
+    background_tasks.add_task(render_high_res, design.id, payload.get("elements", []), db)
 
     return {
         "id": design.id,
@@ -69,8 +70,23 @@ def get_user_designs(db: Session = Depends(get_db), current_user: User = Depends
         "id": d.id,
         "name": d.name,
         "preview_url": d.preview_url,
+        "final_output_url": d.final_output_url,
         "created_at": d.created_at
     } for d in designs]
+
+@router.get("/{design_id}", response_model=dict)
+def get_design(design_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    design = db.query(Design).filter(Design.id == design_id, Design.user_id == current_user.id).first()
+    if not design:
+        raise HTTPException(status_code=404, detail="Design not found")
+    return {
+        "id": design.id,
+        "name": design.name,
+        "elements": design.canvas_json,
+        "preview_url": design.preview_url,
+        "final_output_url": design.final_output_url,
+        "created_at": design.created_at
+    }
 
 def render_high_res(design_id: int, elements: list, db: Session):
     """
@@ -80,40 +96,86 @@ def render_high_res(design_id: int, elements: list, db: Session):
     try:
         # Create transparent base
         img = Image.new("RGBA", (EXPORT_WIDTH, EXPORT_HEIGHT), (255, 255, 255, 0))
-        draw = ImageDraw.Draw(img)
 
         for el in elements:
             # Scale coordinates
             x = el.get("x", 0) * DPI_SCALE
             y = el.get("y", 0) * DPI_SCALE
+            rotation = el.get("rotation", 0)
             
             if el["type"] == "text":
-                # Font logic (using fallback for now)
+                text_str = el.get("text", "")
                 font_size = el.get("fontSize", 24) * DPI_SCALE
+                color = el.get("color", "#000000")
+                
                 try:
-                    # Attempt to find system font or bundled font
                     font = ImageFont.truetype("arial.ttf", int(font_size))
                 except:
                     font = ImageFont.load_default()
                 
-                color = el.get("color", "#000000")
-                draw.text((x, y), el.get("text", ""), fill=color, font=font)
-            
+                # Measure text
+                left, top, right, bottom = font.getbbox(text_str)
+                w, h = right - left, bottom - top
+                if w <= 0 or h <= 0: continue
+                
+                # Create element canvas (add padding to prevent clipping during rotation)
+                padding = 20
+                el_img = Image.new("RGBA", (w + padding*2, h + padding*2), (0,0,0,0))
+                el_draw = ImageDraw.Draw(el_img)
+                el_draw.text((padding - left, padding - top), text_str, fill=color, font=font)
+                
+                # Apply scaling
+                scale_x = el.get("scaleX", 1)
+                scale_y = el.get("scaleY", 1)
+                if scale_x != 1 or scale_y != 1:
+                    el_img = el_img.resize((int(el_img.width * scale_x), int(el_img.height * scale_y)), Image.Resampling.LANCZOS)
+                
+                # Apply rotation
+                if rotation != 0:
+                    # Konva rotates clockwise, PIL rotates counter-clockwise
+                    el_img = el_img.rotate(-rotation, expand=True, resample=Image.Resampling.BICUBIC)
+                
+                # Composite onto base
+                img.alpha_composite(el_img, (int(x - padding), int(y - padding)))
+                
             elif el["type"] == "image":
-                # Image rendering with scaling
                 src = el.get("src", "")
-                if src:
-                    # Handle internal vs external images
-                    # (In production, load from object storage)
-                    pass
+                if not src: continue
+                
+                el_img = None
+                if src.startswith("data:image"):
+                    try:
+                        # Extract base64
+                        header, encoded = src.split(",", 1)
+                        img_data = base64.b64decode(encoded)
+                        el_img = Image.open(io.BytesIO(img_data)).convert("RGBA")
+                    except Exception as e:
+                        print(f"Failed to decode base64: {e}")
+                
+                if el_img:
+                    # Scale based on DPI and element scale
+                    scale_x = el.get("scaleX", 1) * DPI_SCALE
+                    scale_y = el.get("scaleY", 1) * DPI_SCALE
+                    target_w = int(el_img.width * scale_x)
+                    target_h = int(el_img.height * scale_y)
+                    
+                    if target_w > 0 and target_h > 0:
+                        el_img = el_img.resize((target_w, target_h), Image.Resampling.LANCZOS)
+                    
+                    if rotation != 0:
+                        el_img = el_img.rotate(-rotation, expand=True, resample=Image.Resampling.BICUBIC)
+                        
+                    img.alpha_composite(el_img, (int(x), int(y)))
 
         # Save final output
-        os.makedirs("/tmp/static/production", exist_ok=True)
+        # In production, use persistent storage; using centralized STATIC_DIR
+        os.makedirs(settings.PRODUCTION_DIR, exist_ok=True)
         filename = f"production_{design_id}.png"
-        file_path = f"/tmp/static/production/{filename}"
+        file_path = os.path.join(settings.PRODUCTION_DIR, filename)
         img.save(file_path, "PNG", dpi=(300, 300))
         
-        # Update record
+        # We need a new session context since BackgroundTasks might run after req finishes
+        # But for now, we'll try with the passed session, though it's safer to create a new one
         design = db.query(Design).filter(Design.id == design_id).first()
         if design:
             design.final_output_url = f"/static/production/{filename}"

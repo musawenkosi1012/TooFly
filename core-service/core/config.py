@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     # External
     PAYMENT_SERVICE_URL: str = "http://localhost:8002"
     INTERNAL_API_KEY: str = "UNSET_INTERNAL_KEY"
+    
+    # Storage Paths
+    STATIC_DIR: str = "/tmp/static"
+    PRODUCTION_DIR: str = "/tmp/static/production"
+    PREVIEW_DIR: str = "/tmp/static/previews"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

@@ -34,7 +34,7 @@ function AuthContent() {
                 <motion.div 
                     animate={{ 
                         x: isMobile ? "0%" : (isLogin ? "0%" : "100%"),
-                        y: isMobile ? (isLogin ? "0%" : "100%") : "0%"
+                        y: "0%"
                     }}
                     transition={{ 
                         type: "spring", 
@@ -54,7 +54,7 @@ function AuthContent() {
                                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
                                 className="w-full flex justify-center z-10 px-6 sm:px-12"
                             >
-                                <LoginForm />
+                                <LoginForm onToggle={() => setIsLogin(false)} />
                             </motion.div>
                         ) : (
                             <motion.div
@@ -65,7 +65,7 @@ function AuthContent() {
                                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
                                 className="w-full flex justify-center z-10 px-6 sm:px-12"
                             >
-                                <RegisterForm />
+                                <RegisterForm onToggle={() => setIsLogin(true)} />
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -76,7 +76,7 @@ function AuthContent() {
                     initial={false}
                     animate={{ 
                         x: isMobile ? "0%" : (isLogin ? "100%" : "0%"),
-                        y: isMobile ? (isLogin ? "100%" : "0%") : "0%",
+                        y: isMobile ? "100%" : "0%",
                     }}
                     transition={{ 
                         type: "spring", 
