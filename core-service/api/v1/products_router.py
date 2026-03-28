@@ -125,14 +125,19 @@ def like_product(product_id: int, db: Session = Depends(get_db), current_user: U
     if existing_like:
         # Unlike
         db.delete(existing_like)
-        product.likes_count = max(0, product.likes_count - 1)
+        product.likes_count = db.query(ProductLike).filter(ProductLike.product_id == product_id).count() - 1
+        # Defensive check to never go below 0
+        if product.likes_count < 0: product.likes_count = 0 
         db.commit()
+        db.refresh(product)
         return {"status": "unliked", "new_count": product.likes_count, "is_liked": False}
     else:
         # Like
         new_like = ProductLike(product_id=product_id, user_id=current_user.id)
         db.add(new_like)
-        product.likes_count += 1
+        db.commit()
+        # Recalculate from source of truth to ensure absolute accuracy
+        product.likes_count = db.query(ProductLike).filter(ProductLike.product_id == product_id).count()
         db.commit()
         return {"status": "liked", "new_count": product.likes_count, "is_liked": True}
 
@@ -195,7 +200,7 @@ def get_product_performance(product_id: int, db: Session = Depends(get_db)):
             "yearly": int(sum(d['sales'] for d in monthly_data) * 12)
         },
         "chart_data": monthly_data,
-        "market_status": "Trending" if product.likes_count > 10 else "Niche"
+        "market_status": "Trending" if product.likes_count >= 10 else "Niche"
     }
 
 @router.post("/seed", response_model=dict)
