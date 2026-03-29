@@ -155,22 +155,29 @@ def like_product(product_id: int, db: Session = Depends(get_db), current_user: U
     ).first()
     
     if existing_like:
-        # Unlike
+        # 1. Atomic Unlike
         db.delete(existing_like)
-        product.likes_count = db.query(ProductLike).filter(ProductLike.product_id == product_id).count() - 1
-        # Defensive check to never go below 0
-        if product.likes_count < 0: product.likes_count = 0 
+        db.commit()
+        
+        # 2. Recalculate Source of Truth
+        product.likes_count = db.query(ProductLike).filter(ProductLike.product_id == product_id).count()
         db.commit()
         db.refresh(product)
+        
+        ProductCache.invalidate()
         return {"status": "unliked", "new_count": product.likes_count, "is_liked": False}
     else:
-        # Like
+        # 1. Atomic Like
         new_like = ProductLike(product_id=product_id, user_id=current_user.id)
         db.add(new_like)
         db.commit()
-        # Recalculate from source of truth to ensure absolute accuracy
+        
+        # 2. Recalculate Source of Truth
         product.likes_count = db.query(ProductLike).filter(ProductLike.product_id == product_id).count()
         db.commit()
+        db.refresh(product)
+        
+        ProductCache.invalidate()
         return {"status": "liked", "new_count": product.likes_count, "is_liked": True}
 
 @router.post("/{product_id}/comment", response_model=dict)
@@ -186,6 +193,7 @@ def add_comment(product_id: int, payload: dict, db: Session = Depends(get_db), c
     )
     db.add(new_comment)
     db.commit()
+    ProductCache.invalidate()
     return {"status": "commented", "id": new_comment.id}
 
 @router.get("/{product_id}/performance", response_model=dict)
