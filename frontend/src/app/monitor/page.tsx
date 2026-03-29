@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Activity, Shield, Terminal, Loader2, RefreshCcw } from "lucide-react"
 import ProtectedRoute from "@/components/ProtectedRoute"
-import { getAuthToken, API_ROOT } from "@/lib/api"
+import { getStoredToken, API_V1 } from "@/lib/api"
 
 interface TrafficLog {
     id: number
@@ -21,8 +21,8 @@ export default function MonitorDashboard() {
     const fetchLogs = async () => {
         setIsLoading(true)
         try {
-            const token = getAuthToken()
-            const response = await fetch(`${API_ROOT}/monitor/traffic`, {
+            const token = getStoredToken()
+            const response = await fetch(`${API_V1}/internal/traffic`, {
                 headers: {
                     "Authorization": `Bearer ${token}`
                 }
