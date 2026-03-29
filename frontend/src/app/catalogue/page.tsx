@@ -52,17 +52,13 @@ export default function CataloguePage() {
                 <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-16">
                     <div className="w-full md:w-auto">
                         <h1 className="text-6xl md:text-8xl font-bold uppercase italic tracking-tighter text-gradient leading-[0.8]">
-                            Live <br /> Stream
+                            TOO FLY <br /> CATALOGUE
                         </h1>
                         <p className="text-xs font-bold uppercase tracking-[0.4em] text-gray-400 mt-6">
                             Global Inventory / SS26 Collection
                         </p>
                         
                         <div className="mt-10 max-w-sm space-y-6 animate-reveal">
-                            <p className="text-[11px] font-black uppercase italic tracking-[0.15em] text-gray-400 dark:text-gray-500 leading-[1.6]">
-                                TOO-FY is more than a brand. <br />
-                                It is a <span className="text-black dark:text-white">growing space of creators.</span>
-                            </p>
                             <div className="h-[1px] w-12 bg-accent opacity-30" />
                             <p className="text-[11px] font-black uppercase italic tracking-[0.15em] text-accent leading-[1.6]">
                                 Every design contributes to a <span className="text-black dark:text-white">culture of originality.</span> <br />
