@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Heart, Plus, Expand, ChevronLeft, ChevronRight, MessageCircle, X } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import { API_ROOT } from "@/lib/api"
+import { API_ROOT, API_V1 } from "@/lib/api"
 
 export interface Product {
     id: number | string
@@ -46,7 +46,7 @@ export default function ProductCard({ product, delay = 0 }: ProductCardProps) {
         }
 
         try {
-            const commentUrl = `${API_ROOT}/products/${product.id}/comment`
+            const commentUrl = `${API_V1}/products/${product.id}/comment`
             const res = await fetch(commentUrl, {
                 method: "POST",
                 headers: {
@@ -95,7 +95,7 @@ export default function ProductCard({ product, delay = 0 }: ProductCardProps) {
         setLocalLikesCount(prev => originalLiked ? Math.max(0, prev - 1) : prev + 1)
 
         try {
-            const likeUrl = `${API_ROOT}/products/${product.id}/like`
+            const likeUrl = `${API_V1}/products/${product.id}/like`
             
             const res = await fetch(likeUrl, {
                 method: "POST",

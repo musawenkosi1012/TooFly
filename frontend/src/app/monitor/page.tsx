@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Activity, Shield, Terminal, Loader2, RefreshCcw } from "lucide-react"
 import ProtectedRoute from "@/components/ProtectedRoute"
-import { getStoredToken, API_V1 } from "@/lib/api"
+import { getStoredToken, API_V1, apiFetch } from "@/lib/api"
 
 interface TrafficLog {
     id: number

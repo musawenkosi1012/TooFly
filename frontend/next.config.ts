@@ -17,25 +17,28 @@ const nextConfig: NextConfig = {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     return [
       {
-        source: "/api/:path*",
-        destination: `${backendUrl}/api/:path*`,
+        source: "/api/v1/:path*",
+        destination: `${backendUrl}/api/v1/:path*`,
       },
       {
         source: "/v1/:path*",
-        destination: `${backendUrl}/v1/:path*`,
+        destination: `${backendUrl}/api/v1/:path*`,
       },
-      // Some calls might omit the /api prefix in the code
+      {
+        source: "/api/auth/:path*",
+        destination: `${backendUrl}/api/v1/auth/:path*`,
+      },
       {
         source: "/login",
-        destination: `${backendUrl}/api/login`,
+        destination: `${backendUrl}/api/v1/auth/login`,
       },
       {
         source: "/register",
-        destination: `${backendUrl}/api/register`,
+        destination: `${backendUrl}/api/v1/auth/register`,
       },
       {
         source: "/products/:path*",
-        destination: `${backendUrl}/api/products/:path*`,
+        destination: `${backendUrl}/api/v1/products/:path*`,
       }
     ];
   },

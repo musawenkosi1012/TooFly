@@ -28,7 +28,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://toofly-official.vercel.app", # Final Vercel deployment domain
+        "https://too-fly.vercel.app",
+        "https://too-fly-spha.vercel.app",
+        "https://toofly-official.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
