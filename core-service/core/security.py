@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
 import bcrypt
 import time
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 from core.config import settings
 from db.session import get_db
