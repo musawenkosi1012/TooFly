@@ -15,21 +15,21 @@ export default function AboutPage() {
                         The Manifesto
                     </span>
                     <h1 className="text-7xl md:text-9xl font-bold uppercase italic tracking-tighter text-gradient leading-[0.8]">
-                        Toofly <br /> Collective
+                        About <br /> Too Fly
                     </h1>
                 </motion.div>
 
                 <div className="space-y-20">
                     <section className="glass p-12 md:p-20 rounded-[3rem]">
-                        <h2 className="text-3xl font-bold uppercase italic tracking-tighter mb-8 italic">Fluidity & Permanence</h2>
+                        <h2 className="text-3xl font-bold uppercase italic tracking-tighter mb-8 italic">Culture & Purpose</h2>
                         <div className="space-y-6 text-lg text-gray-500 leading-relaxed">
                             <p>
-                                Toofly was founded in 2026 as a response to the ephemeral nature of digital fashion.
-                                We believe that garments should exist at the intersection of physical silhouette and digital permanence.
+                                Too Fly is a culture-driven brand built for individuals who move with purpose. 
+                                It represents confidence, elevation, and self-definition. 
+                                Every piece reflects identity, not conformity. 
                             </p>
-                            <p>
-                                Our collections are not just "clothes"—they are atmospheric units designed for the discerning collective.
-                                Every stitch, every algorithm, and every drop is curated to survive the noise of the global stream.
+                            <p className="text-white font-bold italic">
+                                This is for people who create their own lane and stay in it.
                             </p>
                         </div>
                     </section>
