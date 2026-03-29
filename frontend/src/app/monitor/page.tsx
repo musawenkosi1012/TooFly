@@ -21,16 +21,8 @@ export default function MonitorDashboard() {
     const fetchLogs = async () => {
         setIsLoading(true)
         try {
-            const token = getStoredToken()
-            const response = await fetch(`${API_V1}/internal/traffic`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            })
-            if (response.ok) {
-                const data = await response.json()
-                setLogs(data)
-            }
+            const data = await apiFetch<TrafficLog[]>(`${API_V1}/internal/traffic`)
+            setLogs(data)
         } catch (err) {
             console.error("Traffic sync failed:", err)
         } finally {

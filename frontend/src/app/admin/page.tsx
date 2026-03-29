@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Package, TrendingUp, Activity, Plus, Trash2, Loader2, Search, X, ImagePlus, Clock, User as UserIcon, BarChart3, Zap } from "lucide-react"
 import { fetchProducts, createProduct, Product, API_ROOT, API_V1, apiFetch } from "@/lib/api"
-import ProductCard from "@/components/ProductCard"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { useRouter } from "next/navigation"
 
