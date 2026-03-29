@@ -1,10 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 
 // Global Supabase Client (For Storage only)
-export const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Initialized only if environment variables are present to avoid build-time crashes
+export const supabase = (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+    : null as any;
 
 // Environment-driven API root
 export const API_ROOT = process.env.NEXT_PUBLIC_API_URL || "";
