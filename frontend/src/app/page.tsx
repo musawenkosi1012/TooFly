@@ -35,20 +35,20 @@ export default function Home() {
             <span className="text-accent font-bold uppercase tracking-[0.5em] text-[10px] mb-8 block">
               Volume 01 / SS26 Drop
             </span>
-            <h1 className="text-5xl sm:text-7xl lg:text-[8rem] xl:text-[10rem] font-bold uppercase italic tracking-tighter leading-[0.8] mb-10 text-gradient">
-              ATMOSPHERE <br /> PERMANENCE
+            <h1 className="text-5xl sm:text-7xl lg:text-[10rem] xl:text-[12rem] font-bold uppercase italic tracking-tighter leading-[0.8] mb-10 text-gradient">
+              TOO <br /> FLY
             </h1>
             <div className="space-y-8 mb-12 animate-reveal">
               <p className="text-[11px] md:text-[13px] font-bold uppercase tracking-[0.1em] text-gray-400 max-w-sm leading-relaxed opacity-70">
-                Every TOO-FY piece is engineered for both comfort and expression.
+                Too Fly isn’t worn. It’s lived.
               </p>
               <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase italic tracking-[0.2em] text-accent">Premium fabrics.</p>
-                <p className="text-[10px] font-black uppercase italic tracking-[0.2em] text-accent">Precision cuts.</p>
-                <p className="text-[10px] font-black uppercase italic tracking-[0.2em] text-accent">Designed to carry your creativity.</p>
+                <p className="text-[10px] font-black uppercase italic tracking-[0.2em] text-accent">Built for those who refuse average.</p>
+                <p className="text-[10px] font-black uppercase italic tracking-[0.2em] text-accent">Defined by movement.</p>
+                <p className="text-[10px] font-black uppercase italic tracking-[0.2em] text-accent">Ambition and identity.</p>
               </div>
               <p className="text-[11px] md:text-[13px] font-bold uppercase tracking-[0.1em] text-gray-400 max-w-sm leading-relaxed opacity-70">
-                From minimal statements to bold graphics, every shirt becomes a reflection of its creator.
+                From minimal statements to bold graphics, every piece becomes a reflection of the culture.
               </p>
             </div>
             
