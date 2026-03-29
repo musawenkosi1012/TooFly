@@ -22,6 +22,7 @@ export default function AdminDashboard() {
     const [selectedPerformer, setSelectedPerformer] = useState<any>(null)
     const [isPerformanceOpen, setIsPerformanceOpen] = useState(false)
     const [isPerformanceLoading, setIsPerformanceLoading] = useState(false)
+    const [performanceTab, setPerformanceTab] = useState("Sales")
 
     const [newProduct, setNewProduct] = useState({
         name: "",
@@ -525,13 +526,17 @@ export default function AdminDashboard() {
                                         <div className="flex justify-between items-start mb-12">
                                             <div>
                                                 <h2 className="text-5xl font-black uppercase italic tracking-tighter mb-4 text-gradient">{selectedPerformer?.product_name}</h2>
-                                                <div className="flex gap-4">
-                                                    <span className="text-[10px] font-bold uppercase tracking-widest px-5 py-2 bg-accent text-white rounded-full">
-                                                        {selectedPerformer?.market_status}
-                                                    </span>
-                                                    <span className="text-[10px] font-bold uppercase tracking-widest px-5 py-2 bg-white/5 text-gray-400 rounded-full flex items-center gap-2 border border-white/5">
-                                                        <Activity size={10} className="text-emerald-500" /> Market Velocity: Stable
-                                                    </span>
+                                                {/* Sub-navigation for Metrics */}
+                                                <div className="flex gap-2 p-1 glass rounded-2xl w-fit bg-white/5 border border-white/5 mx-auto lg:mx-0">
+                                                    {["Sales", "Engagement", "Growth"].map((tab) => (
+                                                        <button 
+                                                            key={tab}
+                                                            onClick={() => setPerformanceTab(tab)}
+                                                            className={`px-6 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${performanceTab === tab ? 'bg-accent text-white' : 'text-gray-500 hover:text-white'}`}
+                                                        >
+                                                            {tab}
+                                                        </button>
+                                                    ))}
                                                 </div>
                                             </div>
                                             <div className="text-right">
@@ -563,7 +568,7 @@ export default function AdminDashboard() {
                                             <div className="flex justify-between items-end mb-12 relative z-10">
                                                 <h4 className="text-[11px] font-bold uppercase tracking-[0.3em] text-gray-400 flex items-center gap-3">
                                                     <TrendingUp size={14} className="text-emerald-500" />
-                                                    Revenue Trajectory (L3M)
+                                                    {performanceTab} Trajectory (L3M)
                                                 </h4>
                                                 <Zap size={18} className="text-accent animate-pulse" />
                                             </div>
@@ -573,12 +578,12 @@ export default function AdminDashboard() {
                                                         <div className="w-full relative flex items-end justify-center h-full">
                                                             <motion.div 
                                                                 initial={{ height: 0 }}
-                                                                animate={{ height: `${Math.max(5, (d.revenue / 1000) * 100)}%` }}
+                                                                animate={{ height: `${Math.max(5, (performanceTab === "Sales" ? d.revenue / 1000 : performanceTab === "Engagement" ? d.sales * 10 : d.sales * 5) * 100 / 100)}%` }}
                                                                 transition={{ delay: i * 0.1, duration: 0.8, ease: "circOut" }}
                                                                 className="w-full max-w-[45px] bg-gradient-to-t from-accent/40 to-accent rounded-t-xl group-hover/chart:to-white transition-all duration-500 shadow-lg shadow-accent/20"
                                                             >
                                                                 <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover/chart:opacity-100 transition-all translate-y-2 group-hover/chart:translate-y-0 text-[10px] font-black font-mono bg-white text-black px-3 py-1 rounded-full shadow-xl">
-                                                                    +${d.revenue.toFixed(0)}
+                                                                    {performanceTab === "Sales" ? `+$${d.revenue.toFixed(0)}` : `+${d.sales}pts`}
                                                                 </div>
                                                             </motion.div>
                                                         </div>
