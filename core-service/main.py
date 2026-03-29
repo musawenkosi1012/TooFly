@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import os
 
+from api.v1.auth_router import router as auth_router
 from api.v1.orders_router import router as orders_router
 from api.v1.products_router import router as products_router
 from api.v1.internal_router import router as internal_router
@@ -49,21 +50,14 @@ async def startup_event():
 # Static Files
 app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
 
-# Consolidated Router Configuration with Legacy Prefixes
-v1_routers = [
-    (products_router, ["/api", "/v1", settings.API_V1_STR]),
-    (upload_router, ["/api"]),
-    (orders_router, ["/api", "/v1", settings.API_V1_STR]),
-    (internal_router, [settings.API_V1_STR]),
-]
+# Refined Router Inclusion: One path per router for simplicity
+api_v1_prefix = settings.API_V1_STR # Usually /api/v1
 
-for router, prefixes in v1_routers:
-    for prefix in prefixes:
-        app.include_router(router, prefix=prefix)
-
-# Root fallbacks (No prefix versions)
-app.include_router(products_router)
-app.include_router(orders_router)
+app.include_router(auth_router, prefix=api_v1_prefix, tags=["Authentication"])
+app.include_router(products_router, prefix=api_v1_prefix, tags=["Products"])
+app.include_router(orders_router, prefix=api_v1_prefix, tags=["Orders"])
+app.include_router(internal_router, prefix=api_v1_prefix, tags=["Internal"])
+app.include_router(upload_router, prefix=api_v1_prefix, tags=["Upload"])
 
 @app.get("/")
 def read_root():

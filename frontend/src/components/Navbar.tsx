@@ -6,7 +6,7 @@ import { ShoppingBag, User, Menu, X, Crown, Search, Trash, Sun, Moon, Palette } 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
-import { logout, API_V1 } from "@/lib/api"
+import { logout, API_V1, apiFetch } from "@/lib/api"
 
 import { useRouter } from "next/navigation"
 
@@ -113,17 +113,11 @@ export default function Navbar() {
         setIsCheckingOut(true)
 
         try {
-            const checkoutUrl = `${API_V1}/orders/checkout`
-            
             // Calculate total for backend validation
             const total = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
 
-            const checkoutRes = await fetch(checkoutUrl, {
+            const paynowData = await apiFetch<any>(`${API_V1}/orders/checkout`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
                 body: JSON.stringify({ 
                     total: total,
                     items: cartItems.map(item => ({ 
@@ -139,44 +133,35 @@ export default function Navbar() {
                 })
             })
 
-            const paynowData = await checkoutRes.json()
-
-            if (checkoutRes.ok) {
-                if (paynowData.redirect_url) {
-                    // Standard Web Payment: Redirect
-                    window.location.href = paynowData.redirect_url
-                } else if (paynowData.poll_url || paynowData.order_id) {
-                    // Direct Mobile: Start Polling from Navbar
-                    const orderId = paynowData.order_id
-                    const pollInterval = setInterval(async () => {
-                        try {
-                            const statusRes = await fetch(`${API_V1}/orders/status/${orderId}`, {
-                                method: "POST"
-                            })
-                            const status = await statusRes.json()
-                            if (status.paid || status.status === 'paid' || status.status === 'Paid') {
-                                clearInterval(pollInterval)
-                                window.location.href = "/success"
-                                // Clear cart on success
-                                setCartItems([])
-                                sessionStorage.setItem("cart", "[]")
-                            } else if (status.status === 'Cancelled' || status.status === 'Refused' || status.status === 'failed') {
-                                clearInterval(pollInterval)
-                                alert("Payment was rejected or cancelled.")
-                                setIsCheckingOut(false)
-                            }
-                        } catch (e) {
-                            console.error("Polling error:", e)
+            if (paynowData.redirect_url) {
+                // Standard Web Payment: Redirect
+                window.location.href = paynowData.redirect_url
+            } else if (paynowData.poll_url || paynowData.order_id) {
+                // Direct Mobile: Start Polling from Navbar
+                const orderId = paynowData.order_id
+                const pollInterval = setInterval(async () => {
+                    try {
+                        const status = await apiFetch<any>(`${API_V1}/orders/status/${orderId}`, {
+                            method: "POST"
+                        })
+                        if (status.paid || status.status === 'paid' || status.status === 'Paid') {
+                            clearInterval(pollInterval)
+                            window.location.href = "/success"
+                            setCartItems([])
+                            sessionStorage.setItem("cart", "[]")
+                        } else if (status.status === 'Cancelled' || status.status === 'Refused' || status.status === 'failed') {
+                            clearInterval(pollInterval)
+                            alert("Payment was rejected or cancelled.")
+                            setIsCheckingOut(false)
                         }
-                    }, 5000) // Poll every 5s
-                }
-            } else {
-                alert(paynowData.detail || paynowData.error || "Failed to process order.")
-                setIsCheckingOut(false)
+                    } catch (e) {
+                        console.error("Polling error:", e)
+                    }
+                }, 5000)
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error(err)
-            alert("Error processing order.")
+            alert(err.message || "Error processing order.")
             setIsCheckingOut(false)
         }
     }

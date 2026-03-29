@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Global Supabase Client
+// Global Supabase Client (For Storage only)
 export const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -8,7 +8,7 @@ export const supabase = createClient(
 
 // Environment-driven API root
 export const API_ROOT = process.env.NEXT_PUBLIC_API_URL || "";
-export const API_V1 = `${API_ROOT}/v1`;
+export const API_V1 = `${API_ROOT}/api/v1`;
 
 export interface Product {
     id: number;
@@ -35,14 +35,24 @@ export interface AuthResponse {
     user: User;
 }
 
-export async function getAuthToken() {
-    const { data: { session } } = await supabase.auth.getSession();
-    return session?.access_token || null;
+// Token management (Aligned with existing UI logic)
+export function getStoredToken() {
+    if (typeof window === "undefined") return null;
+    return sessionStorage.getItem("token");
 }
 
-// Unified fetch wrapper for DRY API calls
-async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const token = await getAuthToken();
+export function setStoredToken(token: string) {
+    sessionStorage.setItem("token", token);
+}
+
+export function clearStoredToken() {
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
+}
+
+// Unified fetch wrapper for local FastAPI backend
+export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const token = getStoredToken();
     const headers = {
         "Content-Type": "application/json",
         ...(token ? { "Authorization": `Bearer ${token}` } : {}),
@@ -53,12 +63,54 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
     
     if (!response.ok) {
         const error = await response.json().catch(() => ({ detail: "Unknown API error" }));
+        // Handle 401 Unauthorized by clearing token
+        if (response.status === 401) {
+            clearStoredToken();
+        }
         throw new Error(error.detail || error.error || `HTTP ${response.status}: ${response.statusText}`);
     }
 
     if (response.status === 204) return {} as T;
-    
     return response.json();
+}
+
+// Authentication Actions (Restored Local Identity Logic)
+export async function login(email: string, password: string): Promise<AuthResponse> {
+    const formData = new URLSearchParams();
+    formData.append("username", email);
+    formData.append("password", password);
+
+    const response = await fetch(`${API_V1}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Authentication failed");
+    }
+
+    const data: AuthResponse = await response.json();
+    setStoredToken(data.access_token);
+    sessionStorage.setItem("user", JSON.stringify(data.user));
+    return data;
+}
+
+export async function register(email: string, password: string): Promise<any> {
+    return apiFetch(`${API_V1}/auth/register`, {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+    });
+}
+
+export async function logout() {
+    clearStoredToken();
+}
+
+// Product Management
+export async function fetchProducts(): Promise<Product[]> {
+    return apiFetch(`${API_V1}/products`);
 }
 
 export async function likeProduct(id: number): Promise<void> {
@@ -70,33 +122,6 @@ export async function addComment(id: number, content: string): Promise<void> {
         method: "POST",
         body: JSON.stringify({ content }),
     });
-}
-
-export async function login(email: string, password: string): Promise<any> {
-    const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-    });
-    if (error) throw error;
-    return data;
-}
-
-export async function register(email: string, password: string): Promise<any> {
-    const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-    });
-    if (error) throw error;
-    return data;
-}
-
-export async function logout() {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-}
-
-export async function fetchProducts(): Promise<Product[]> {
-    return apiFetch(`${API_V1}/products`);
 }
 
 export async function createProduct(product: Omit<Product, "id" | "likes_count">): Promise<Product> {

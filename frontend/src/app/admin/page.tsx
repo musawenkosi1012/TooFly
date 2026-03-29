@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Package, TrendingUp, Activity, Plus, Trash2, Loader2, Search, X, ImagePlus, Clock, User as UserIcon, BarChart3, Zap } from "lucide-react"
-import { fetchProducts, createProduct, Product, API_ROOT, API_V1 } from "@/lib/api"
+import { fetchProducts, createProduct, Product, API_ROOT, API_V1, apiFetch } from "@/lib/api"
 import ProductCard from "@/components/ProductCard"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { useRouter } from "next/navigation"
@@ -35,20 +35,12 @@ export default function AdminDashboard() {
     
     async function loadDashboard() {
         try {
-            const token = sessionStorage.getItem("token")
-            
-            const [productData, dashRes] = await Promise.all([
+            const [productData, dashData] = await Promise.all([
                 fetchProducts(),
-                fetch(`${API_ROOT}/owner/dashboard`, {
-                    headers: { "Authorization": `Bearer ${token}` }
-                })
+                apiFetch<any>(`${API_V1}/auth/owner/dashboard`)
             ])
             
-            if (dashRes.ok) {
-                const dashData = await dashRes.json()
-                setStatsData(dashData)
-            }
-
+            setStatsData(dashData)
             setProducts(productData)
         } catch (err) {
             console.error("Dashboard sync error:", err)
@@ -64,11 +56,9 @@ export default function AdminDashboard() {
     const handleDelete = async (id: number) => {
         if (!confirm("Are you sure you want to remove this piece from the stream?")) return
         try {
-            await fetch(`${API_ROOT}/products/${id}`, {
-                method: "DELETE",
-                headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
+            await apiFetch(`${API_V1}/products/${id}`, {
+                method: "DELETE"
             })
-            // Refresh local state
             setProducts(products.filter(p => p.id !== id))
         } catch (err) {
             console.error(err)
@@ -132,29 +122,15 @@ export default function AdminDashboard() {
         
         try {
             const optimizedUrls = await Promise.all(
-                files.map(file => resizeImage(file, 800)) // Use slightly smaller for thumbnails
+                files.map(file => resizeImage(file, 800))
             );
             
-            // Append images to product with AUTH headers
             if (optimizedUrls.length > 0) {
-                const token = sessionStorage.getItem("token")
-                const attachUrl = `${API_ROOT}/products/${productId}/images`
-                const attachRes = await fetch(attachUrl, {
+                await apiFetch(`${API_V1}/products/${productId}/images`, {
                     method: "POST",
-                    headers: { 
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
-                    },
                     body: JSON.stringify({ urls: optimizedUrls })
                 })
-                
-                if (attachRes.ok) {
-                   await loadDashboard()
-                } else {
-                   const err = await attachRes.json()
-                   console.error("Link failed:", err)
-                   alert(`Failed to link pictures: ${err.detail || 'Access Denied'}`)
-                }
+                await loadDashboard()
             }
         } catch (error) {
             console.error(error)
@@ -189,11 +165,8 @@ export default function AdminDashboard() {
         setIsPerformanceLoading(true)
         setIsPerformanceOpen(true)
         try {
-            const res = await fetch(`${API_V1}/products/${productId}/performance`)
-            if (res.ok) {
-                const data = await res.json()
-                setSelectedPerformer(data)
-            }
+            const data = await apiFetch<any>(`${API_V1}/products/${productId}/performance`)
+            setSelectedPerformer(data)
         } catch (err) {
             console.error(err)
         } finally {
@@ -294,8 +267,8 @@ export default function AdminDashboard() {
                                         onClick={async () => {
                                             if (!confirm("CRITICAL: This will remove ALL pieces from the global stream. Proceed?")) return
                                             try {
-                                                const res = await fetch(`${API_ROOT}/products/manage/wipe`, { method: 'DELETE' })
-                                                if (res.ok) setProducts([])
+                                                await apiFetch(`${API_V1}/products/manage/wipe`, { method: 'DELETE' })
+                                                setProducts([])
                                             } catch (err) { console.error(err) }
                                         }}
                                         className="flex items-center gap-2 px-6 py-3 bg-red-500/10 text-red-500 text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-red-500 hover:text-white transition-all shadow-lg"

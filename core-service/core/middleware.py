@@ -37,6 +37,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
             "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
+            "connect-src 'self' cdn.jsdelivr.net; "
             "img-src 'self' data: https: fastapi.tiangolo.com;"
         )
         
