@@ -114,3 +114,32 @@ async def owner_dashboard(db: Session = Depends(get_db)):
         "conversion_rate": round(conversion_rate, 1) if real_traffic > 0 else 0,
         "recent_sales": sales_feed
     }
+
+@router.post("/seed/admin")
+async def seed_admin_users(db: Session = Depends(get_db)):
+    # 1. Create IT Admin (Access to System Monitor)
+    admin_email = "admin@toofly.com"
+    admin = db.query(User).filter(User.email == admin_email).first()
+    if not admin:
+        admin = User(
+            email=admin_email,
+            hashed_password=hash_password("admin123"),
+            role="it_admin",
+            is_active=True
+        )
+        db.add(admin)
+    
+    # 2. Create Owner (Access to Admin Portal/Inventory)
+    owner_email = "owner@toofly.com"
+    owner = db.query(User).filter(User.email == owner_email).first()
+    if not owner:
+        owner = User(
+            email=owner_email,
+            hashed_password=hash_password("owner123"),
+            role="owner",
+            is_active=True
+        )
+        db.add(owner)
+    
+    db.commit()
+    return {"status": "admins seeded", "emails": [admin_email, owner_email]}
