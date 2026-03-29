@@ -6,8 +6,8 @@ export const supabase = (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEX
     ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
     : null as any;
 
-// Environment-driven API root
-export const API_ROOT = process.env.NEXT_PUBLIC_API_URL || "";
+// Environment-driven API root (Trim trailing slash for safety)
+export const API_ROOT = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
 export const API_V1 = `${API_ROOT}/api/v1`;
 
 export interface Product {
