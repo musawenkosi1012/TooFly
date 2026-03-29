@@ -7,7 +7,7 @@ class OrderService:
     def create_order(self, db: Session, user: Any, checkout_data: Dict[str, Any]) -> Dict[str, Any]:
         # 1. Create locally with status pending
         order = Order(
-            user_id=user.id,
+            user_email=user.email,
             total_amount=checkout_data["total"],
         )
         db.add(order)
