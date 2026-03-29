@@ -26,6 +26,10 @@ const nextConfig: NextConfig = {
       {
         source: "/register",
         destination: `${backendUrl}/api/register`,
+      },
+      {
+        source: "/products/:path*",
+        destination: `${backendUrl}/api/products/:path*`,
       }
     ];
   },

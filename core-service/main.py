@@ -133,6 +133,11 @@ app.include_router(products_router, prefix=settings.API_V1_STR)
 app.include_router(internal_router, prefix=settings.API_V1_STR)
 app.include_router(designs_router, prefix=settings.API_V1_STR)
 
+# 4. Global Root Fallback (No prefix)
+app.include_router(auth_router)
+app.include_router(products_router)
+app.include_router(orders_router)
+
 @app.get("/")
 def read_root():
     return {"status": "operational", "service": "Core Orchestrator"}
