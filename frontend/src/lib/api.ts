@@ -1,9 +1,14 @@
-// Resilient API URL resolution: ensures we always have a clean /api root regardless of whether /v1 is appended in env
-// In production, defaulting to empty string makes fetches relative to the current origin
-const rawUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace(/\/$/, "");
-export const API_ROOT = rawUrl.replace(/\/v1(\/|$)/, "$1").replace(/\/$/, ""); // Strip /v1 if present to get auth base
-export const API_V1 = API_ROOT.endsWith("/v1") ? API_ROOT : `${API_ROOT}/v1`; // Ported from products endpoint
+import { createClient } from "@supabase/supabase-js";
 
+// Global Supabase Client
+export const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+// Environment-driven API root
+export const API_ROOT = process.env.NEXT_PUBLIC_API_URL || "";
+export const API_V1 = `${API_ROOT}/v1`;
 
 export interface Product {
     id: number;
@@ -19,30 +24,6 @@ export interface Product {
     is_liked?: boolean;
 }
 
-export async function likeProduct(id: number): Promise<void> {
-    const token = getAuthToken();
-    const response = await fetch(`${API_V1}/products/${id}/like`, { 
-        method: "POST",
-        headers: {
-            ...(token ? { "Authorization": `Bearer ${token}` } : {})
-        }
-    });
-    if (!response.ok) throw new Error("Failed to like product");
-}
-
-export async function addComment(id: number, content: string): Promise<void> {
-    const token = getAuthToken();
-    const response = await fetch(`${API_V1}/products/${id}/comment`, {
-        method: "POST",
-        headers: { 
-            "Content-Type": "application/json",
-            ...(token ? { "Authorization": `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ content }),
-    });
-    if (!response.ok) throw new Error("Failed to add comment");
-}
-
 export interface User {
     email: string;
     role: string;
@@ -54,88 +35,81 @@ export interface AuthResponse {
     user: User;
 }
 
-export async function login(email: string, password: string): Promise<AuthResponse> {
-    const formData = new URLSearchParams();
-    formData.append("username", email);
-    formData.append("password", password);
+export async function getAuthToken() {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+}
 
-    const response = await fetch(`${API_ROOT}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: formData,
-    });
+// Unified fetch wrapper for DRY API calls
+async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const token = await getAuthToken();
+    const headers = {
+        "Content-Type": "application/json",
+        ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        ...options.headers,
+    };
+
+    const response = await fetch(endpoint, { ...options, headers });
+    
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "Failed to login");
+        const error = await response.json().catch(() => ({ detail: "Unknown API error" }));
+        throw new Error(error.detail || error.error || `HTTP ${response.status}: ${response.statusText}`);
     }
-    const data = await response.json();
-    sessionStorage.setItem("token", data.access_token);
-    sessionStorage.setItem("user", JSON.stringify(data.user));
+
+    if (response.status === 204) return {} as T;
+    
+    return response.json();
+}
+
+export async function likeProduct(id: number): Promise<void> {
+    return apiFetch(`${API_V1}/products/${id}/like`, { method: "POST" });
+}
+
+export async function addComment(id: number, content: string): Promise<void> {
+    return apiFetch(`${API_V1}/products/${id}/comment`, {
+        method: "POST",
+        body: JSON.stringify({ content }),
+    });
+}
+
+export async function login(email: string, password: string): Promise<any> {
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+    });
+    if (error) throw error;
     return data;
 }
 
-export async function register(email: string, password: string): Promise<User> {
-    const response = await fetch(`${API_ROOT}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+export async function register(email: string, password: string): Promise<any> {
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
     });
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "Failed to register");
-    }
-    return response.json();
+    if (error) throw error;
+    return data;
 }
 
-export function logout() {
-    sessionStorage.removeItem("token");
-    sessionStorage.removeItem("user");
-}
-
-export function getAuthToken() {
-    if (typeof window !== "undefined") {
-        return sessionStorage.getItem("token");
-    }
-    return null;
+export async function logout() {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
 }
 
 export async function fetchProducts(): Promise<Product[]> {
-    const token = getAuthToken();
-    const response = await fetch(`${API_V1}/products`, {
-        headers: {
-            ...(token ? { "Authorization": `Bearer ${token}` } : {})
-        }
-    });
-    if (!response.ok) throw new Error("Failed to fetch products");
-    return response.json();
+    return apiFetch(`${API_V1}/products`);
 }
 
 export async function createProduct(product: Omit<Product, "id" | "likes_count">): Promise<Product> {
-    const token = getAuthToken();
-    const response = await fetch(`${API_V1}/products`, {
+    return apiFetch(`${API_V1}/products`, {
         method: "POST",
-        headers: { 
-            "Content-Type": "application/json",
-            ...(token ? { "Authorization": `Bearer ${token}` } : {})
-        },
         body: JSON.stringify(product),
     });
-    if (!response.ok) throw new Error("Failed to create product");
-    return response.json();
 }
 
 export async function deleteProduct(id: number): Promise<void> {
-    const token = getAuthToken();
-    const response = await fetch(`${API_V1}/products/${id}`, {
-        method: "DELETE",
-        headers: {
-            ...(token ? { "Authorization": `Bearer ${token}` } : {})
-        }
-    });
-    if (!response.ok) throw new Error("Failed to delete product");
+    return apiFetch(`${API_V1}/products/${id}`, { method: "DELETE" });
 }
 
 export async function seedProducts(): Promise<void> {
-    const response = await fetch(`${API_V1}/seed`, { method: "POST" });
-    if (!response.ok) throw new Error("Failed to seed products");
+    return apiFetch(`${API_V1}/seed`, { method: "POST" });
 }

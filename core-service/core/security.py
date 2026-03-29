@@ -2,9 +2,10 @@ from fastapi import HTTPException, Depends, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+import bcrypt
 import time
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from core.config import settings
 from db.session import get_db
@@ -14,21 +15,51 @@ reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login"
 )
 
+# --- Password & Token Security ---
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    if not hashed_password:
+        return False
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+
+def hash_password(password: str) -> str:
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({"exp": int(expire.timestamp())})
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
 # --- Role-Based Access Control (RBAC) ---
 
-def get_current_user(db: Session = Depends(get_db), token: str = Depends(reusable_oauth2)) -> User:
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise HTTPException(status_code=401, detail="Could not validate credentials")
-    except Exception:
-        raise HTTPException(status_code=401, detail="Could not validate credentials")
+from core.supabase import supabase
+
+def get_current_user(request: Request, db: Session = Depends(get_db)):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid authentication credentials"
+        )
     
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+    token = auth_header.split(" ")[1]
+    
+    try:
+        # Get user via Supabase SDK (Server-side validation)
+        res = supabase.auth.get_user(token)
+        if not res.user:
+            raise HTTPException(status_code=401, detail="Invalid session")
+            
+        # Roles are often stored in app_metadata when using RBAC/Claims
+        # If not present, we default to customer for safety
+        supabase_user = res.user
+        setattr(supabase_user, "role", supabase_user.app_metadata.get("role", "customer"))
+        
+        return supabase_user
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
 
 class RoleChecker:
     def __init__(self, allowed_roles: List[str]):

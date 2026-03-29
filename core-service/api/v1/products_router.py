@@ -10,44 +10,8 @@ from jose import jwt
 from fastapi.security import OAuth2PasswordBearer
 import time
 
-reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/login"
-)
-
-# In-memory cache for global product list
-class ProductCache:
-    _data = None
-    _expiry = 0
-    TTL = 60 # Seconds
-
-    @classmethod
-    def get(cls):
-        if cls._data and time.time() < cls._expiry:
-            return cls._data
-        return None
-
-    @classmethod
-    def set(cls, data):
-        cls._data = data
-        cls._expiry = time.time() + cls.TTL
-
-    @classmethod
-    def invalidate(cls):
-        cls._data = None
-
-def get_current_user(db: Session = Depends(get_db), token: str = Depends(reusable_oauth2)):
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        email = payload.get("sub")
-        if email is None:
-            raise HTTPException(status_code=401, detail="Could not validate credentials")
-    except Exception:
-        raise HTTPException(status_code=401, detail="Could not validate credentials")
-    
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+from core.security import get_current_user, reusable_oauth2
+from services.product_cache import product_cache as ProductCache
 
 router = APIRouter(prefix="/products")
 
@@ -121,7 +85,7 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "deleted", "id": product_id}
 
-@router.delete("/manage/wipe", response_model=dict)
+@router.delete("/manage/wipe", response_model=dict, dependencies=[Depends(RoleChecker(["owner"]))])
 def wipe_all_products(db: Session = Depends(get_db)):
     # CAUTION: This removes all products. Use sparingly.
     count = db.query(Product).delete()
@@ -181,7 +145,7 @@ def like_product(product_id: int, db: Session = Depends(get_db), current_user: U
         return {"status": "liked", "new_count": product.likes_count, "is_liked": True}
 
 @router.post("/{product_id}/comment", response_model=dict)
-def add_comment(product_id: int, payload: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def add_comment(product_id: int, payload: CommentCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -189,7 +153,7 @@ def add_comment(product_id: int, payload: dict, db: Session = Depends(get_db), c
     new_comment = Comment(
         product_id=product_id,
         user_id=current_user.id,
-        content=payload["content"]
+        content=payload.content
     )
     db.add(new_comment)
     db.commit()
@@ -283,3 +247,5 @@ def seed_products(db: Session = Depends(get_db)):
     
     db.commit()
     return {"status": "success", "count": len(initial_products)}
+}
+s": "success", "count": len(initial_products)}

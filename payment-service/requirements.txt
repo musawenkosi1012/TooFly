@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 paynow
-pydantic
+pydantic[email]
 pydantic-settings
 python-dotenv
 requests

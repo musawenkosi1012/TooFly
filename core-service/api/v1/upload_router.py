@@ -10,19 +10,36 @@ router = APIRouter()
 UPLOAD_DIR = pathlib.Path("/tmp/static/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-import base64
+from core.supabase import supabase
 
 @router.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
-    # Validation
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Only images are allowed")
     
-    # Read the file and convert to Base64
     try:
+        # Generate unique filename
+        ext = pathlib.Path(file.filename).suffix
+        filename = f"{uuid.uuid4()}{ext}"
+        
+        # Read file content with 5MB limit
+        MAX_SIZE = 5 * 1024 * 1024 # 5 MB
         content = await file.read()
-        encoded = base64.b64encode(content).decode('utf-8')
-        data_uri = f"data:{file.content_type};base64,{encoded}"
-        return {"image_url": data_uri}
+        if len(content) > MAX_SIZE:
+            raise HTTPException(status_code=413, detail="File too large. Maximum size is 5MB.")
+        
+        # Upload to Supabase Storage - Default bucket 'product-images'
+        res = supabase.storage.from_("product-images").upload(
+            path=filename,
+            file=content,
+            file_options={"content-type": file.content_type}
+        )
+        
+        # Get public URL
+        public_url = supabase.storage.from_("product-images").get_public_url(filename)
+        
+        return {"image_url": public_url}
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not encode file: {e}")
+        raise HTTPException(status_code=500, detail=f"Upload to Supabase failed: {str(e)}")
