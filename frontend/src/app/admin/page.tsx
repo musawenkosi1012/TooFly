@@ -33,14 +33,20 @@ export default function AdminDashboard() {
     })
     
     async function loadDashboard() {
+        setIsLoading(true)
         try {
-            const [productData, dashData] = await Promise.all([
-                fetchProducts(),
-                apiFetch<any>(`${API_V1}/auth/owner/dashboard`)
-            ])
-            
-            setStatsData(dashData)
+            // Fetch products independently to ensure table loads even if stats fail
+            const productData = await fetchProducts()
             setProducts(productData)
+            
+            // Fetch dashboard stats
+            try {
+                const dashData = await apiFetch<any>(`${API_V1}/auth/owner/dashboard`)
+                setStatsData(dashData)
+            } catch (statErr) {
+                console.warn("Dashboard stats sync failed:", statErr)
+                // Use fallback stats if needed or leave null
+            }
         } catch (err) {
             console.error("Dashboard sync error:", err)
         } finally {
