@@ -9,7 +9,7 @@ from typing import List, Dict, Optional
 
 from core.config import settings
 from db.session import get_db
-from domain.users.models import User
+# Injected Supabase authentication (suplanting legacy local model)
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login"
@@ -65,7 +65,7 @@ class RoleChecker:
     def __init__(self, allowed_roles: List[str]):
         self.allowed_roles = allowed_roles
 
-    def __call__(self, user: User = Depends(get_current_user)):
+    def __call__(self, user: Any = Depends(get_current_user)):
         if user.role not in self.allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

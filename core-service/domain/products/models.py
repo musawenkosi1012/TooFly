@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from db.base_class import Base
+from datetime import datetime
 
 class Product(Base):
     __tablename__ = "products"
@@ -22,16 +23,17 @@ class ProductLike(Base):
     __tablename__ = "product_likes"
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey("products.id"))
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    # Supabase-compatible identity (email or uuid as string)
+    user_email = Column(String(255), nullable=False)
     
     product = relationship("Product", back_populates="likes")
-    __table_args__ = (UniqueConstraint('product_id', 'user_id', name='_user_product_like_uc'),)
+    __table_args__ = (UniqueConstraint('product_id', 'user_email', name='_user_product_like_uc'),)
 
 class Comment(Base):
     __tablename__ = "comments"
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey("products.id"))
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Allow Guest comments too? No, usually linked to user.
+    user_email = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
     timestamp = Column(String, default=lambda: datetime.now().isoformat())
     
@@ -44,5 +46,3 @@ class ProductImage(Base):
     url = Column(Text, nullable=False)
     
     product = relationship("Product", back_populates="images")
-
-from datetime import datetime
