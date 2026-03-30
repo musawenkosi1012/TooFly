@@ -88,32 +88,47 @@ async def health_check():
 
 @router.get("/owner/dashboard", dependencies=[Depends(RoleChecker(["owner"]))])
 async def owner_dashboard(db: Session = Depends(get_db)):
-    total_likes = db.query(func.sum(Product.likes_count)).scalar() or 0
-    total_comments = db.query(Comment).count()
-    total_users = db.query(User).count()
-    
-    real_traffic = (total_likes * 2) + (total_comments * 4) + (total_users * 15)
-    paid_orders = db.query(Order).filter(Order.status == "paid").count()
-    
-    conversion_rate = (paid_orders / (real_traffic / 10 + 1)) * 100
-    if conversion_rate > 100: conversion_rate = 98.4 
-    
-    recent_paid = db.query(Order).filter(Order.status == "paid").order_by(Order.created_at.desc()).limit(5).all()
-    sales_feed = [
-        {
-            "id": s.id,
-            "user": s.user_email if hasattr(s, 'user_email') else "Anonymous",
-            "amount": s.total_amount,
-            "time": s.created_at.strftime("%H:%M")
-        } for s in recent_paid
-    ]
-    
-    return {
-        "active_products": db.query(Product).count(),
-        "total_traffic": int(real_traffic),
-        "conversion_rate": round(conversion_rate, 1) if real_traffic > 0 else 0,
-        "recent_sales": sales_feed
-    }
+    try:
+        # Aggregations - Handle None gracefully
+        likes_count_res = db.query(func.sum(Product.likes_count)).scalar()
+        total_likes = int(likes_count_res) if likes_count_res is not None else 0
+        
+        total_comments = db.query(Comment).count()
+        total_users = db.query(User).count()
+        
+        real_traffic = (total_likes * 2) + (total_comments * 4) + (total_users * 15)
+        paid_orders = db.query(Order).filter(Order.status == "paid").count()
+        
+        # Safe denominator
+        denominator = (real_traffic / 10 + 1)
+        conversion_rate = (paid_orders / denominator) * 100
+        if conversion_rate > 100: conversion_rate = 98.4 
+        
+        recent_paid = db.query(Order).filter(Order.status == "paid").order_by(Order.created_at.desc()).limit(5).all()
+        sales_feed = []
+        for s in recent_paid:
+            sales_feed.append({
+                "id": s.id,
+                "user": s.user_email or "Anonymous",
+                "amount": s.total_amount,
+                "time": s.created_at.strftime("%H:%M") if s.created_at else "Now"
+            })
+        
+        return {
+            "active_products": db.query(Product).count(),
+            "total_traffic": int(real_traffic),
+            "conversion_rate": round(conversion_rate, 1) if real_traffic > 0 else 0,
+            "recent_sales": sales_feed
+        }
+    except Exception as e:
+        # Fallback to empty stats instead of crashing (prevents CORS failures on 500s)
+        return {
+            "active_products": 0,
+            "total_traffic": 0,
+            "conversion_rate": 0,
+            "recent_sales": [],
+            "error_detail": str(e)
+        }
 
 @router.post("/seed/admin")
 async def seed_admin_users(db: Session = Depends(get_db)):

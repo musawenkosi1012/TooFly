@@ -23,22 +23,18 @@ app = FastAPI(
     version=settings.PROJECT_VERSION
 )
 
+app.add_middleware(SecurityMiddleware)
+app.add_middleware(PerformanceMiddleware)
+
 # Standardized CORS - Restricted in production
+# Moved to be the outermost middleware to ensure CORS headers are added even on 500s or rate limits
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://too-fly.vercel.app",
-        "https://too-fly-spha.vercel.app",
-        "https://toofly-official.vercel.app",
-    ],
+    allow_origin_regex=r"https://.*\.vercel\.app|http://localhost:3000",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.add_middleware(SecurityMiddleware)
-app.add_middleware(PerformanceMiddleware)
 
 @app.on_event("startup")
 async def startup_event():
